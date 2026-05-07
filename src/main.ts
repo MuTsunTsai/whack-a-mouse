@@ -49,12 +49,25 @@ const game = new Phaser.Game(config);
 //   refresh() 是 Phaser 4 安全可重入 API，多呼叫無副作用。
 function refreshScale(): void {
 	game.scale.refresh();
+	updateRotateHint();
 }
 function refreshScaleStaggered(): void {
 	refreshScale();
 	setTimeout(refreshScale, 100);
 	setTimeout(refreshScale, 300);
 	setTimeout(refreshScale, 600);
+}
+
+// 旋轉提示：只在「處於全螢幕」且「viewport 仍呈直立（高 ≥ 寬）」時顯示
+// 一般狀態（未進全螢幕）或正常橫式時都不顯示
+function updateRotateHint(): void {
+	const el = document.getElementById("rotate-hint");
+	if (!el) return;
+	const isFullscreen = !!document.fullscreenElement || !!(document as Document & {
+		webkitFullscreenElement?: Element | null;
+	}).webkitFullscreenElement;
+	const isPortrait = window.innerHeight >= window.innerWidth;
+	el.style.display = isFullscreen && isPortrait ? "block" : "none";
 }
 window.addEventListener("orientationchange", refreshScaleStaggered);
 document.addEventListener("fullscreenchange", refreshScaleStaggered);

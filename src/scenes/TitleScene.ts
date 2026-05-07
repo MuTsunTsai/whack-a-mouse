@@ -8,6 +8,7 @@ import { RunState } from "../systems/RunState.ts";
 import { SaveSystem } from "../systems/SaveSystem.ts";
 import { SfxSystem } from "../systems/SfxSystem.ts";
 import { makeButton } from "../utils/button.ts";
+import { enterFullscreenAndLockLandscape } from "../utils/fullscreen.ts";
 import { addText } from "../utils/text.ts";
 
 const MEDAL_SIZE = 32;
@@ -147,11 +148,7 @@ export class TitleScene extends Phaser.Scene {
 		bg.on("pointerout", () => bg.setFillStyle(0x000000, 0.55));
 		bg.on("pointerdown", () => {
 			SfxSystem.play(this, "sfx-click");
-			try {
-				if (!this.scale.isFullscreen) this.scale.startFullscreen();
-			} catch {
-				// 部分裝置（如 iOS Safari）不支援 Fullscreen API，靜默忽略
-			}
+			enterFullscreenAndLockLandscape(this);
 			refresh();
 		});
 

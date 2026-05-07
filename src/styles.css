@@ -31,3 +31,20 @@ body {
 canvas {
 	display: block;
 }
+
+/* 直立提示：僅在「進入全螢幕但裝置仍呈直立」時由 JS 顯示（main.ts 控制） */
+#rotate-hint {
+	position: fixed;
+	bottom: 16px;
+	left: 0;
+	right: 0;
+	text-align: center;
+	font-size: 20px;
+	font-weight: bold;
+	color: #ffeb70;
+	background: rgba(0, 0, 0, 0.65);
+	padding: 12px 16px;
+	pointer-events: none;
+	z-index: 9999;
+	display: none;
+}

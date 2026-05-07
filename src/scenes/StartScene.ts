@@ -4,6 +4,7 @@
 
 import Phaser from "phaser";
 import { SfxSystem } from "../systems/SfxSystem.ts";
+import { enterFullscreenAndLockLandscape } from "../utils/fullscreen.ts";
 import { addText } from "../utils/text.ts";
 
 export class StartScene extends Phaser.Scene {
@@ -93,15 +94,11 @@ export class StartScene extends Phaser.Scene {
 			}
 			SfxSystem.play(this, "sfx-click");
 
-			// 手機版：嘗試進入全螢幕（必須在使用者互動的 callback 內呼叫才會被瀏覽器允許）
+			// 手機版：嘗試進入全螢幕 + lock 到 landscape（必須在使用者互動的 callback 內）
 			const dev = this.game.device;
 			const isMobile = !!dev.input.touch && !dev.os.desktop;
-			if (isMobile && !this.scale.isFullscreen) {
-				try {
-					this.scale.startFullscreen();
-				} catch {
-					// 部分裝置 / iOS Safari 不支援 Fullscreen API，靜默忽略
-				}
+			if (isMobile) {
+				enterFullscreenAndLockLandscape(this);
 			}
 
 			this.scene.start("TitleScene");
