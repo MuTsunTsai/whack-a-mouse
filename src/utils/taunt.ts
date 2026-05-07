@@ -23,7 +23,7 @@ export const MISS_KILL_LINES = [
 // 集氣完成、釋放老鼠藥時
 export const BOMB_LINES = [
 	"全市投藥！",
-	"4750 公斤起跳。",
+	"加碼 4750 公斤！",
 	"第二代抗凝血劑出動。",
 	"讓老鼠無所遁形！",
 ];
@@ -45,7 +45,7 @@ export const STAGE_FAIL_LINES = [
 // 五關全破彩蛋
 export const ALL_CLEAR_LINES = [
 	"市長您打了 {{mouse}} 隻老鼠，誤傷 {{innocent}} 隻天敵與毛孩。",
-	"全市撒了 4750 公斤毒餌，老鷹卻先死了。",
+	"全市撒了上萬公斤毒餌，老鷹卻先死了。",
 	"安鼠之亂落幕，但下一場呢？",
 ];
 
