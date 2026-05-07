@@ -151,7 +151,7 @@ export class GameOverScene extends Phaser.Scene {
 		const stats: Array<[string, string]> = [
 			["分數", String(this.result.score)],
 			["最高分", String(high)],
-			["過關門檻", String(stage.passScore * mod.passScoreMultiplier)],
+			["過關門檻", String(Math.ceil(stage.passScore * mod.passScoreMultiplier))],
 			["滅鼠數", String(this.result.mouseHit)],
 			["誤傷無辜", String(this.result.innocentHit)],
 			["最高連擊", String(this.result.maxCombo)],
