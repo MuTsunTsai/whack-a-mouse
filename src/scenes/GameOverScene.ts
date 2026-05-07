@@ -25,7 +25,7 @@ interface GameOverData {
 	mouseHit: number;
 	innocentHit: number;
 	maxCombo: number;
-	bombUsedThisStage: boolean;
+	bombsUsedThisStage: number;
 }
 
 export class GameOverScene extends Phaser.Scene {
@@ -46,6 +46,17 @@ export class GameOverScene extends Phaser.Scene {
 		const isLastStage = this.result.stageId === STAGES[STAGES.length - 1]!.id;
 		const allCleared = this.result.passed && isLastStage;
 		const difficulty = RunState.getDifficulty();
+
+		// Analytics：過關（含最後一關全破）→ 送 wam_stage_clear
+		if (this.result.passed) {
+			Analytics.stageClear({
+				difficulty,
+				stageId: this.result.stageId,
+				combo: this.result.maxCombo,
+				bomb: this.result.bombsUsedThisStage,
+				score: this.result.score,
+			});
+		}
 
 		// 依結果選擇音樂、背景、CG 解鎖
 		let cgKey: string;

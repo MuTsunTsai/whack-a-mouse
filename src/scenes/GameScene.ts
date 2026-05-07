@@ -52,7 +52,7 @@ export class GameScene extends Phaser.Scene {
 
 	private stageSecondsLeft: number = 0;
 	private over: boolean = false;
-	private bombUsedThisStage: boolean = false;
+	private bombsUsedThisStage: number = 0;
 	/**
 	 * 炸彈動畫進行中：true 期間暫停 spawn 新生物。
 	 * 視覺上避免「炸彈剛清場 → 新動物立刻冒出」的違和感（會讓玩家誤以為沒炸到）。
@@ -94,7 +94,7 @@ export class GameScene extends Phaser.Scene {
 		this.creatures = new Set();
 		this.stageSecondsLeft = Math.round(this.effectiveStage.durationSec);
 		this.over = false;
-		this.bombUsedThisStage = false;
+		this.bombsUsedThisStage = 0;
 
 		// 漢他新機制：依難度決定門檻
 		this.hantaThreshold = this.mod.hantaThreshold;
@@ -459,7 +459,7 @@ export class GameScene extends Phaser.Scene {
 	private tryDetonate(): void {
 		if (this.over || !this.charge.canDetonate) return;
 		this.charge.consume();
-		this.bombUsedThisStage = true;
+		this.bombsUsedThisStage += 1;
 		RunState.markBombUsed();
 		// 手機版：清空積壓的點擊（避免炸完還繼續執行舊揮擊）
 		if (this.isMobile) this.clearMobileTapQueue();
@@ -617,7 +617,7 @@ export class GameScene extends Phaser.Scene {
 				mouseHit: snapshot.mouseHit,
 				innocentHit: snapshot.innocentHit,
 				maxCombo: snapshot.maxCombo,
-				bombUsedThisStage: this.bombUsedThisStage,
+				bombsUsedThisStage: this.bombsUsedThisStage,
 			});
 		});
 	}

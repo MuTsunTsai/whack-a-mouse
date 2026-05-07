@@ -38,6 +38,23 @@ export const Analytics = {
 		});
 	},
 
+	/** 玩家通過某關（passed === true 才送）。combo / bomb / score 為這關當局的數字 */
+	stageClear(args: {
+		difficulty: Difficulty;
+		stageId: number;
+		combo: number;
+		bomb: number;
+		score: number;
+	}): void {
+		gtag()?.("event", "wam_stage_clear", {
+			difficulty: args.difficulty,
+			stage_id: args.stageId,
+			combo: args.combo,
+			bomb: args.bomb,
+			score: args.score,
+		});
+	},
+
 	/** 五關全破 → 結局畫面。ending = "good"（純手打）| "bad"（用過炸彈） */
 	allCleared(args: {
 		difficulty: Difficulty;
