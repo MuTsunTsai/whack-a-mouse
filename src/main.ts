@@ -3,6 +3,7 @@
 import "./styles.css";
 import Phaser from "phaser";
 import { BALANCE } from "./config/balance.ts";
+import { showInAppBrowserNoticeIfNeeded } from "./systems/InAppBrowserNotice.ts";
 import { BootScene } from "./scenes/BootScene.ts";
 import { EndingScene } from "./scenes/EndingScene.ts";
 import { GalleryScene } from "./scenes/GalleryScene.ts";
@@ -33,6 +34,10 @@ const config: Phaser.Types.Core.GameConfig = {
 	},
 	scene: [BootScene, StartScene, TitleScene, StageSelectScene, GameScene, GameOverScene, EndingScene, GalleryScene, MuteToggleScene],
 };
+
+// 偵測 in-app 瀏覽器（FB / IG / LINE 等內嵌 webview）→ 提示用戶改用外部瀏覽器
+// 在 Phaser 啟動之前先跑：對話框是純 DOM、會浮在 canvas 之上
+showInAppBrowserNoticeIfNeeded();
 
 const game = new Phaser.Game(config);
 
