@@ -529,6 +529,8 @@ export class GameScene extends Phaser.Scene {
 		const n = this.hantaThreshold;
 
 		if (count >= n) {
+			// 漢他爆發 → 血條定格在滿血、停止閃爍，避免玩家誤會「為什麼條沒滿就 game over」
+			this.hud.setHanta(n, n, 0);
 			this.gameOver("hanta");
 			return;
 		}
