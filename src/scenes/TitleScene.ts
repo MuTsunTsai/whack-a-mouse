@@ -112,6 +112,53 @@ export class TitleScene extends Phaser.Scene {
 			fontSize: "20px",
 			color: "#aaaaaa",
 		}).setOrigin(0.5);
+
+		// 手機版：左上角額外放一個「全螢幕」按鈕（StartScene 那次觸發若失敗時的補救）
+		const dev = this.game.device;
+		const isMobile = !!dev.input.touch && !dev.os.desktop;
+		if (isMobile) {
+			this.makeFullscreenButton(20, 20);
+		}
+	}
+
+	/**
+	 * 手機版左上角「全螢幕」按鈕。直接用 rectangle + 文字繪製，不依賴美術素材。
+	 * 已在全螢幕中時自動隱藏。
+	 */
+	private makeFullscreenButton(x: number, y: number): void {
+		const w = 56;
+		const h = 56;
+		const refresh = () => {
+			container.setVisible(!this.scale.isFullscreen);
+		};
+
+		const bg = this.add
+			.rectangle(0, 0, w, h, 0x000000, 0.55)
+			.setStrokeStyle(2, 0xffffff, 0.7)
+			.setOrigin(0, 0);
+		const icon = addText(this, w / 2, h / 2, "⛶", {
+			fontSize: "32px",
+			color: "#ffffff",
+		}).setOrigin(0.5);
+
+		const container = this.add.container(x, y, [bg, icon]).setDepth(500).setSize(w, h);
+		bg.setInteractive({ useHandCursor: true });
+		bg.on("pointerover", () => bg.setFillStyle(0x222244, 0.7));
+		bg.on("pointerout", () => bg.setFillStyle(0x000000, 0.55));
+		bg.on("pointerdown", () => {
+			SfxSystem.play(this, "sfx-click");
+			try {
+				if (!this.scale.isFullscreen) this.scale.startFullscreen();
+			} catch {
+				// 部分裝置（如 iOS Safari）不支援 Fullscreen API，靜默忽略
+			}
+			refresh();
+		});
+
+		// 進入 / 退出全螢幕事件 → 同步可見性
+		this.scale.on("enterfullscreen", refresh);
+		this.scale.on("leavefullscreen", refresh);
+		refresh();
 	}
 
 	private makeGalleryButton(x: number, y: number): void {
