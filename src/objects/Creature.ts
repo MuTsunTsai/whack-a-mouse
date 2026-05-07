@@ -374,6 +374,21 @@ export class Creature {
 		});
 	}
 
+	/**
+	 * 凍結：停止所有「會主動改變狀態」的 timer / tween，但保留 visual + flicker。
+	 * 用於 game over（特別是漢他爆發）時：希望畫面定格在當下狀態，
+	 * 直到場景切換時 destroy 才完全消失。
+	 *  - 停掉 retract timer：不會再退場 / 瞬移
+	 *  - 停掉 breathing：不會繼續上下擺動
+	 *  - 保留 flicker：漢他爆發時的閃紅效果是視覺重點，要留下來
+	 *  - 保留 visual：圖案留在洞口
+	 */
+	freeze(): void {
+		this.cancelRetract();
+		this.stopBreathing();
+		// 不呼叫 stopFlicker — 故意保留漢他閃紅效果
+	}
+
 	bombKill(): void {
 		if (!this.alive) {
 			return;

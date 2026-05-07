@@ -574,11 +574,19 @@ export class GameScene extends Phaser.Scene {
 		this.stageTimer.remove();
 		this.alarmTimer?.remove();
 
-		for (const c of this.creatures.values()) {
-			c.destroy();
+		// 漢他爆發時：保留場上所有動物（特別是閃紅的老鼠）作為視覺反饋，僅凍結它們的計時器；
+		// scene.start 切場景時會自然清掉。其他 reason（過關 / 不及格）一律 destroy。
+		if (reason === "hanta") {
+			for (const c of this.creatures.values()) {
+				c.freeze();
+			}
+		} else {
+			for (const c of this.creatures.values()) {
+				c.destroy();
+			}
+			this.creatures.clear();
+			this.spawn.freeAll();
 		}
-		this.creatures.clear();
-		this.spawn.freeAll();
 
 		const snapshot = this.score.snapshot;
 		const passed = reason === "stage-end" && snapshot.score >= this.effectiveStage.passScore;
