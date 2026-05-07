@@ -2,6 +2,7 @@
 
 import Phaser from "phaser";
 import { DIFFICULTY, type Difficulty } from "../config/difficulty.ts";
+import { Analytics } from "../systems/Analytics.ts";
 import { MusicSystem } from "../systems/MusicSystem.ts";
 import { RunState } from "../systems/RunState.ts";
 import { SaveSystem } from "../systems/SaveSystem.ts";
@@ -238,6 +239,7 @@ export class TitleScene extends Phaser.Scene {
 			const onComplete = () => {
 				SaveSystem.setLastDifficulty(d);
 				RunState.start(d);
+				Analytics.startRun(d);
 				this.scene.start("StageSelectScene");
 			};
 			if(useImage) {

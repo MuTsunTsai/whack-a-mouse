@@ -12,6 +12,7 @@ import { Hammer } from "../objects/Hammer.ts";
 import { Hole } from "../objects/Hole.ts";
 import { HUD } from "../objects/HUD.ts";
 import { PoisonBomb } from "../objects/PoisonBomb.ts";
+import { Analytics } from "../systems/Analytics.ts";
 import { ChargeSystem } from "../systems/ChargeSystem.ts";
 import { MusicSystem } from "../systems/MusicSystem.ts";
 import { RunState } from "../systems/RunState.ts";
@@ -594,6 +595,15 @@ export class GameScene extends Phaser.Scene {
 			mouseHit: snapshot.mouseHit,
 			innocentHit: snapshot.innocentHit,
 		});
+
+		// Analytics：陣亡 = 漢他 OR 時間到但不及格（過關不算陣亡）
+		if (reason === "hanta" || !passed) {
+			Analytics.stageDeath({
+				difficulty,
+				stageId: this.stage.id,
+				reason: reason === "hanta" ? "hanta" : "fail",
+			});
+		}
 
 		// 過場：先在遊戲畫面中央播 2 秒大字動畫，再切到 GameOverScene
 		this.playGameOverBanner(reason, passed, () => {

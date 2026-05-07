@@ -3,6 +3,7 @@
 import Phaser from "phaser";
 import { DIFFICULTY } from "../config/difficulty.ts";
 import { STAGES } from "../config/stages.ts";
+import { Analytics } from "../systems/Analytics.ts";
 import { MusicSystem } from "../systems/MusicSystem.ts";
 import { RunState } from "../systems/RunState.ts";
 import { SaveSystem } from "../systems/SaveSystem.ts";
@@ -25,6 +26,7 @@ export class StageSelectScene extends Phaser.Scene {
 		if(!RunState.get()) {
 			const last = SaveSystem.getLastDifficulty() ?? "normal";
 			RunState.start(last);
+			Analytics.startRun(last);
 		}
 
 		const difficulty = RunState.getDifficulty();

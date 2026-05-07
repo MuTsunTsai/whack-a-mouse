@@ -5,6 +5,7 @@
 
 import Phaser from "phaser";
 import { DIFFICULTY } from "../config/difficulty.ts";
+import { Analytics } from "../systems/Analytics.ts";
 import { MusicSystem } from "../systems/MusicSystem.ts";
 import { RunState } from "../systems/RunState.ts";
 import { SaveSystem, type Ending } from "../systems/SaveSystem.ts";
@@ -142,6 +143,7 @@ export class EndingScene extends Phaser.Scene {
 			onClick: () => {
 				const d = RunState.getDifficulty();
 				RunState.start(d);
+				Analytics.startRun(d);
 				this.scene.start("StageSelectScene");
 			},
 		});

@@ -5,6 +5,7 @@
 
 import Phaser from "phaser";
 import { STAGES, getStageById } from "../config/stages.ts";
+import { Analytics } from "../systems/Analytics.ts";
 import { MusicSystem } from "../systems/MusicSystem.ts";
 import { RunState } from "../systems/RunState.ts";
 import { SaveSystem } from "../systems/SaveSystem.ts";
@@ -170,6 +171,7 @@ export class GameOverScene extends Phaser.Scene {
 				label: "繼續",
 				cb: () => {
 					const ending = RunState.wasBombUsed() ? "bad" : "good";
+					Analytics.allCleared({ difficulty, ending });
 					this.scene.start("EndingScene", { ending });
 				},
 				bg: 0xddaa44,
