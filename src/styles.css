@@ -1,0 +1,29 @@
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	background: #1e1e2e;
+	color: #ffffff;
+	font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "Helvetica Neue", Arial, sans-serif;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+/* Phaser 的 Scale.CENTER_BOTH 會自行於 parent 中置中 canvas，
+   #app 只需是滿版的 block container，避免 flex 與 Phaser margin 互相打架 */
+#app {
+	width: 100vw;
+	height: 100vh;
+}
+
+canvas {
+	display: block;
+}
