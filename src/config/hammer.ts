@@ -29,7 +29,7 @@ export const HAMMER = {
 	hitRadius: 130,
 
 	// === 揮擊動畫 ===
-	swingDurationMs: 180, // 一次按下→揮擊→回復的總時間
+	swingDurationMs: 150, // 一次按下→揮擊→回復的總時間
 	swingAngleDeg: -40, // 揮擊瞬間旋轉角度（度，正值順時針）
 
 	// === 手機版相對移動 ===

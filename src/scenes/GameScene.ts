@@ -234,8 +234,8 @@ export class GameScene extends Phaser.Scene {
 		if (!next) return;
 		this.mobileSwinging = true;
 		this.performWhackAtPointer(next.x, next.y, () => {
-			// 揮擊動畫 + 250ms 冷卻後才允許下一次（總冷卻 ≈ swingDurationMs，但需確保 ≥ 250ms）
-			const COOLDOWN_MS = 250;
+			// 揮擊動畫（150ms）後再加 150ms 冷卻硬直 → 兩次點擊間隔最少 300ms
+			const COOLDOWN_MS = 150;
 			this.time.delayedCall(COOLDOWN_MS, () => {
 				this.mobileSwinging = false;
 				this.tryDispatchNextMobileTap();
