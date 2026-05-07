@@ -41,22 +41,25 @@ showInAppBrowserNoticeIfNeeded();
 
 const game = new Phaser.Game(config);
 
-// 手機旋轉 / 瀏覽器 chrome 變化時，Phaser 內建 resize listener 不一定能即時 fit viewport：
-//  1. iOS Safari 旋轉時 orientationchange 比 resize 更早觸發、且 innerWidth/Height 更新有延遲
-//  2. visualViewport 變化（軟鍵盤、雙指縮放退出）有時不會觸發 window.resize
-// 解法：主動監聽多個事件源，每次都呼叫 scale.refresh() 重新算 fit。
-//   refresh() 是 Phaser 4 提供的 API，安全可重入，多呼叫無副作用。
+// 多種情境會讓 viewport 改變、但瀏覽器更新 innerWidth/Height 有延遲（特別是 iOS）：
+//  1. orientationchange：旋轉裝置
+//  2. fullscreenchange：進 / 退全螢幕
+//  3. visualViewport.resize：軟鍵盤 / 雙指縮放退出
+// 解法：每次事件都連續多次呼叫 scale.refresh()（0/100/300/600ms），涵蓋瀏覽器整個過渡時間。
+//   refresh() 是 Phaser 4 安全可重入 API，多呼叫無副作用。
 function refreshScale(): void {
 	game.scale.refresh();
 }
-window.addEventListener("orientationchange", () => {
-	// orientationchange 後瀏覽器仍需 ~50–200ms 才會更新 innerWidth/Height（特別是 iOS）
-	// 多呼叫幾次涵蓋整個過渡
+function refreshScaleStaggered(): void {
 	refreshScale();
 	setTimeout(refreshScale, 100);
 	setTimeout(refreshScale, 300);
 	setTimeout(refreshScale, 600);
-});
+}
+window.addEventListener("orientationchange", refreshScaleStaggered);
+document.addEventListener("fullscreenchange", refreshScaleStaggered);
+// Safari 仍需 webkit 前綴版本才會在某些情況觸發
+document.addEventListener("webkitfullscreenchange", refreshScaleStaggered);
 if (window.visualViewport) {
 	window.visualViewport.addEventListener("resize", refreshScale);
 }
