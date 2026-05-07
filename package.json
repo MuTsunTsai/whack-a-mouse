@@ -18,6 +18,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
+    "inapp-spy": "^5.0.9",
     "phaser": "^4.1.0"
   }
 }

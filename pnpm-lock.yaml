@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      inapp-spy:
+        specifier: ^5.0.9
+        version: 5.0.9
       phaser:
         specifier: ^4.1.0
         version: 4.1.0
@@ -155,6 +158,9 @@ packages:
   eventemitter3@5.0.4:
     resolution: {integrity: sha512-mlsTRyGaPBjPedk6Bvw+aqbsXDtoAyAzm5MO7JgU+yVRyMQ5O8bD4Kcci7BS85f93veegeCPkL8R4GLClnjLFw==}
 
+  inapp-spy@5.0.9:
+    resolution: {integrity: sha512-5y1EBhi9PhojGtkdwcQd8I8GlVSjIE7X6ZpBae3w5PPg2NEaoRhGUPvLy6WwFZ/CgFusoEaaGVxaQmBzd70Zyg==}
+
   phaser@4.1.0:
     resolution: {integrity: sha512-ZXv5Bhyg2BqJGAAxNI2xvmzGXW9q+TwUG1RLri5ZDBYGGtcma6aWUO/eJ7EbozeqRd5fKdpo4ycNMQt+Bi5iYg==}
 
@@ -290,6 +296,8 @@ snapshots:
   assertion-error@2.0.1: {}
 
   eventemitter3@5.0.4: {}
+
+  inapp-spy@5.0.9: {}
 
   phaser@4.1.0:
     dependencies:
