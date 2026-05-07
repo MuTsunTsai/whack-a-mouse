@@ -1,5 +1,5 @@
 // 啟動畫面：解鎖瀏覽器自動播放限制 + 提示玩家點擊進入
-// BootScene 載完資產後切到此 scene，使用者點擊任意處 → 進 TitleScene
+// BootScene 載完資源後切到此 scene，使用者點擊任意處 → 進 TitleScene
 // 由於這次點擊算「使用者互動」，TitleScene 一進去就能直接播放 BGM
 
 import Phaser from "phaser";

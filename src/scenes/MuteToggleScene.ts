@@ -1,6 +1,6 @@
 // 永遠覆蓋在所有 scene 上層的靜音切換按鈕
 //
-// 由 BootScene 在資產載入完成後 launch（不是 start，避免取代主場景），
+// 由 BootScene 在資源載入完成後 launch（不是 start，避免取代主場景），
 // 之後一直存在於 scene manager 中、永不關閉。
 
 import Phaser from "phaser";

@@ -175,7 +175,7 @@ export class TitleScene extends Phaser.Scene {
 		const mod = DIFFICULTY[d];
 		const lastChosen = SaveSystem.getLastDifficulty() === d;
 
-		// 若有美術資產（btn-difficulty-{d}）→ 用圖片按鈕（上插畫 + 下純色文字區）
+		// 若有美術資源（btn-difficulty-{d}）→ 用圖片按鈕（上插畫 + 下純色文字區）
 		// 否則 fallback 為原本的純色 rectangle
 		const imageKey = `btn-difficulty-${d}`;
 		const useImage = this.textures.exists(imageKey);

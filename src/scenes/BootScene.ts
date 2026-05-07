@@ -1,4 +1,4 @@
-// BootScene：預掃所有預期資產（生物頭像、背景、結局插畫、BGM），
+// BootScene：預掃所有預期資源（生物頭像、背景、結局插畫、BGM），
 // 只把實際存在的排進 Phaser loader
 
 import Phaser from "phaser";
@@ -24,7 +24,7 @@ export class BootScene extends Phaser.Scene {
 			fontStyle: "bold",
 		}).setOrigin(0.5);
 
-		this.loadingText = addText(this, width / 2, height / 2, "資產載入中…", {
+		this.loadingText = addText(this, width / 2, height / 2, "資源載入中…", {
 			fontSize: "20px",
 			color: "#aaaaaa",
 		}).setOrigin(0.5);
@@ -37,7 +37,7 @@ export class BootScene extends Phaser.Scene {
 			.rectangle(width / 2 - 160, height / 2 + 30, 0, 10, 0x66dd66, 1)
 			.setOrigin(0, 0.5);
 
-		// 預掃所有預期資產（檔案不存在時靜默退回 fallback）
+		// 預掃所有預期資源（檔案不存在時靜默退回 fallback）
 		const creatures = getAllCreatureImages();
 		const stages = STAGES.map((s) => ({ key: `bg-${s.key}`, name: `bg-${s.key}` }));
 		const extras = [
@@ -70,7 +70,7 @@ export class BootScene extends Phaser.Scene {
 			{ key: "medal-ending-set", name: "medal-ending-set" },
 		];
 
-		// 音訊資產（mp3 / ogg / wav 任一存在即可）
+		// 音訊資源（mp3 / ogg / wav 任一存在即可）
 		const audios = [
 			// BGM
 			{ key: "bgm-title", name: "bgm-title" },
@@ -92,7 +92,7 @@ export class BootScene extends Phaser.Scene {
 			{ key: "sfx-hawk", name: "sfx-hawk" },
 		];
 
-		this.loadingText.setText("檢查美術與音訊…");
+		this.loadingText.setText("檢查遊戲資源…");
 
 		const creaturesResolved = await Promise.all(
 			creatures.map(({ name }) => resolveImageUrl(name)),
@@ -149,7 +149,7 @@ export class BootScene extends Phaser.Scene {
 
 		// preload() 是 async — Phaser 不會等它，Phaser 已經以為 loader 跑完了。
 		// 我們手動再跑一次 loader，等真正完成後才切到主選單。
-		this.loadingText?.setText("載入美術資產…");
+		this.loadingText?.setText("遊戲載入中…");
 		this.load.once("complete", () => {
 			this.sliceUiSpriteSheets();
 			this.startNextScene();

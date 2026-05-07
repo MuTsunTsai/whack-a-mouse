@@ -1,7 +1,7 @@
 // 生物表：每種生物的頭像 + 變體數量
 // 動畫由 Phaser tween 處理（彈出、縮回、被打震動、掉回洞口）
 //
-// 資產規格：
+// 資源規格：
 //   - 基本檔名：{type}-normal.png / {type}-stunned.png（單一變體時）
 //   - 多變體檔名：{type}-normal-1.png ~ {type}-normal-N.png，stunned 同理
 //   - 為向下相容：如果定義有變體，遊戲會優先抽變體；若所有變體都缺，會 fallback 到無編號的版本

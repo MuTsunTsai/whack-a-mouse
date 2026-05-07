@@ -1,7 +1,7 @@
 // 音效播放：與 BGM 系統獨立（不同音量、不會互相打斷）
 //
 // 用法：在 scene 內呼叫 SfxSystem.play(scene, "sfx-click")
-// 缺資產時靜默不播；不阻塞遊戲流程。
+// 缺資源時靜默不播；不阻塞遊戲流程。
 
 import Phaser from "phaser";
 

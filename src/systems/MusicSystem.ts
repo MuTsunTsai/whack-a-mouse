@@ -78,7 +78,7 @@ export const MusicSystem = {
 		if (state.currentKey === key && state.current?.isPlaying) {
 			return;
 		}
-		// 沒這支音檔（缺資產時）就靜音不動
+		// 沒這支音檔（缺資源時）就靜音不動
 		if (!scene.cache.audio.exists(key)) {
 			return;
 		}
