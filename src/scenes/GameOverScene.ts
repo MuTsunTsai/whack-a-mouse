@@ -60,6 +60,17 @@ export class GameOverScene extends Phaser.Scene {
 			RunState.breakCleanRun();
 		}
 
+		// 成就：安鼠高手 / 達人 / 神人 — 第五關過關 + cleanRun 仍保持
+		// 在這裡解鎖（而非 EndingScene），讓玩家在過關畫面就能看到通知
+		if (allCleared && RunState.isCleanRun()) {
+			const id = difficulty === "easy"
+				? "expert_easy"
+				: difficulty === "normal"
+					? "expert_normal"
+					: "expert_hard";
+			AchievementSystem.unlock(id);
+		}
+
 		// Analytics：過關（含最後一關全破）→ 送 wam_stage_clear
 		if (this.result.passed) {
 			Analytics.stageClear({

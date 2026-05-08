@@ -55,17 +55,8 @@ export class EndingScene extends Phaser.Scene {
 
 		// CG 收集
 		SaveSystem.unlockCg(`bg-ending-${ending}`);
-
-		// 成就：安鼠高手 / 達人 / 神人 — 五關全破且整場 run 都「乾淨通關」
-		// （沒用過炸彈、沒失敗、沒重玩、沒退出選關 / 主畫面）
-		if (RunState.isCleanRun()) {
-			const id = difficulty === "easy"
-				? "expert_easy"
-				: difficulty === "normal"
-					? "expert_normal"
-					: "expert_hard";
-			AchievementSystem.unlock(id);
-		}
+		// 註：安鼠高手 / 達人 / 神人 成就在 GameOverScene 第五關過關時就已解鎖，
+		// 玩家在過關畫面就能看到通知，不延後到結局。
 
 		// BGM
 		MusicSystem.play(this, isGood ? "bgm-ending-good" : "bgm-ending-bad");
