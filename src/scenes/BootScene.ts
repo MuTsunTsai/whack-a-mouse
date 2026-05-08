@@ -5,6 +5,7 @@ import Phaser from "phaser";
 import { getAllCreatureImages } from "../config/creatures.ts";
 import { STAGES } from "../config/stages.ts";
 import { MuteSystem } from "../systems/MuteSystem.ts";
+import { RunState } from "../systems/RunState.ts";
 import { resolveAudioUrl, resolveImageUrl } from "../utils/assetResolver.ts";
 import { addText } from "../utils/text.ts";
 
@@ -307,22 +308,22 @@ export class BootScene extends Phaser.Scene {
 		// === TODO: 暫時的 dev 跳場（微調特定畫面用，調完移除這整個 if 區塊）===
 		// 直接跳到要微調的畫面，方便 HMR 即時比對視覺
 		// 移除步驟：刪掉這整段 if、保留下面的 this.scene.start("StartScene")
-		// if (import.meta.env?.DEV) {
-		// 	RunState.start("normal");
-		// 	// 模擬一場全破跑完的 run state（給 EndingScene 顯示總分用）
-		// 	for (const s of STAGES) {
-		// 		RunState.registerStageResult({
-		// 			stageId: s.id,
-		// 			passed: true,
-		// 			score: 1500,
-		// 			mouseHit: 60,
-		// 			innocentHit: 2,
-		// 		});
-		// 	}
-		// 	// good ending：不呼叫 markBombUsed
-		// 	this.scene.start("EndingScene", { ending: "bad" });
-		// 	return;
-		// }
+		if (import.meta.env?.DEV) {
+			RunState.start("normal");
+			// 模擬全破第 5 關（all clear）→ 看「繼續」加大置中、選關+主選單貼右
+			const finalId = STAGES[STAGES.length - 1]!.id;
+			this.scene.start("GameOverScene", {
+				stageId: finalId,
+				reason: "stage-end",
+				passed: true,
+				score: 3500,
+				mouseHit: 120,
+				innocentHit: 4,
+				maxCombo: 28,
+				bombsUsedThisStage: 0,
+			});
+			return;
+		}
 		// === 暫時 dev 跳場結束 ===
 
 		// 進入啟動畫面（讓使用者點一下解鎖音訊，再進 TitleScene）

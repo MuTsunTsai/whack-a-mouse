@@ -198,29 +198,8 @@ export class GameOverScene extends Phaser.Scene {
 			}).setOrigin(0, 0.5);
 		});
 
-		// 依結果配置按鈕
-		const buttons: Array<{ label: string; cb: () => void; bg: number; key: string }> = [];
-		if (allCleared) {
-			// 五區全破：依整場 run 是否用過炸彈分流到 good / bad ending
-			buttons.push({
-				label: "繼續",
-				cb: () => {
-					const ending = RunState.wasBombUsed() ? "bad" : "good";
-					Analytics.allCleared({ difficulty, ending });
-					this.scene.start("EndingScene", { ending });
-				},
-				bg: 0xddaa44,
-				key: "btn-next-ending",
-			});
-		} else if (this.result.passed && !isLastStage) {
-			buttons.push({
-				label: "下一關",
-				cb: () => this.scene.start("GameScene", { stageId: this.result.stageId + 1 }),
-				bg: 0x44aa44,
-				key: "btn-next-stage",
-			});
-		}
-		buttons.push({
+		// 共用按鈕定義
+		const replayBtn = {
 			label: "再挑戰",
 			cb: () => {
 				// 重玩同關 → 破壞達人類成就條件
@@ -229,8 +208,8 @@ export class GameOverScene extends Phaser.Scene {
 			},
 			bg: 0x4477aa,
 			key: "btn-replay",
-		});
-		buttons.push({
+		};
+		const selectBtn = {
 			label: "選關",
 			cb: () => {
 				RunState.breakCleanRun();
@@ -238,8 +217,8 @@ export class GameOverScene extends Phaser.Scene {
 			},
 			bg: 0x666666,
 			key: "btn-stage-select",
-		});
-		buttons.push({
+		};
+		const mainMenuBtn = {
 			label: "主選單",
 			cb: () => {
 				RunState.end();
@@ -247,29 +226,105 @@ export class GameOverScene extends Phaser.Scene {
 			},
 			bg: 0x444444,
 			key: "btn-main-menu",
-		});
+		};
 
-		// 每顆按鈕依各自 texture aspect 算寬度；統一目標高度 100、缺檔 fallback 為 156×60
-		const targetH = 100;
-		const sizes = buttons.map((b) =>
-			buttonSizeFromTexture(this, b.key, { targetH, fallbackW: 156, fallbackH: 60 }),
-		);
-		const gap = 14;
-		const totalW = sizes.reduce((acc, s) => acc + s.width, 0) + (buttons.length - 1) * gap;
+		const passedNonFinal = this.result.passed && !isLastStage;
 		const btnY = height - 70;
-		let cursorX = (width - totalW) / 2;
-		buttons.forEach((b, i) => {
-			const s = sizes[i]!;
-			const x = cursorX + s.width / 2;
+
+		if (passedNonFinal || allCleared) {
+			// 過關（非最後一關）或全破的三段式排版：
+			//   - 中央加大主按鈕（過關 = 「下一關」、全破 = 「繼續」進結局）
+			//   - 「再挑戰」放在左側
+			//   - 「選關 / 主選單」放在右側上下並列
+			const centerBtn = passedNonFinal
+				? {
+					label: "下一關",
+					cb: () => this.scene.start("GameScene", { stageId: this.result.stageId + 1 }),
+					bg: 0x44aa44,
+					key: "btn-next-stage",
+				}
+				: {
+					label: "繼續",
+					cb: () => {
+						const ending = RunState.wasBombUsed() ? "bad" : "good";
+						Analytics.allCleared({ difficulty, ending });
+						this.scene.start("EndingScene", { ending });
+					},
+					bg: 0xddaa44,
+					key: "btn-next-ending",
+				};
+			// 中央按鈕用更大尺寸（targetH 1.4×）凸顯「玩家應該點這個」；文字也對等放大
+			const centerH = 140;
+			const centerSize = buttonSizeFromTexture(this, centerBtn.key, { targetH: centerH, fallbackW: 220, fallbackH: 84 });
 			makeButton({
-				scene: this, x, y: btnY,
-				targetH, fallbackW: s.width, fallbackH: s.height,
-				textureKey: b.key, fallbackColor: b.bg,
-				label: b.label,
-				onClick: b.cb,
+				scene: this,
+				x: width / 2, y: btnY,
+				targetH: centerH, fallbackW: centerSize.width, fallbackH: centerSize.height,
+				textureKey: centerBtn.key, fallbackColor: centerBtn.bg,
+				label: centerBtn.label, fontSize: "32px",
+				onClick: centerBtn.cb,
 			});
-			cursorX += s.width + gap;
-		});
+
+			// 左側：再挑戰（緊貼左邊距）
+			const sideH = 90;
+			const replaySize = buttonSizeFromTexture(this, replayBtn.key, { targetH: sideH, fallbackW: 156, fallbackH: 54 });
+			const sideMargin = 24;
+			makeButton({
+				scene: this,
+				x: sideMargin + replaySize.width / 2, y: btnY,
+				targetH: sideH, fallbackW: replaySize.width, fallbackH: replaySize.height,
+				textureKey: replayBtn.key, fallbackColor: replayBtn.bg,
+				label: replayBtn.label,
+				onClick: replayBtn.cb,
+			});
+
+			// 右側：選關 + 主選單水平並排（更貼右邊、彼此更靠近）
+			const rightBtns = [selectBtn, mainMenuBtn];
+			const rightSizes = rightBtns.map((b) =>
+				buttonSizeFromTexture(this, b.key, { targetH: sideH, fallbackW: 156, fallbackH: 54 }),
+			);
+			const rightGap = -30;
+			const rightMargin = 8;
+			// 從畫面右邊往內倒著排，最後一顆貼右邊距、第一顆在更內側
+			let rightCursorX = width - rightMargin;
+			for (let i = rightBtns.length - 1; i >= 0; i--) {
+				const b = rightBtns[i]!;
+				const s = rightSizes[i]!;
+				const x = rightCursorX - s.width / 2;
+				makeButton({
+					scene: this,
+					x, y: btnY,
+					targetH: sideH, fallbackW: s.width, fallbackH: s.height,
+					textureKey: b.key, fallbackColor: b.bg,
+					label: b.label,
+					onClick: b.cb,
+				});
+				rightCursorX -= s.width + rightGap;
+			}
+		} else {
+			// 失敗：保留原本「按鈕橫排置中」的排版
+			const buttons = [replayBtn, selectBtn, mainMenuBtn];
+
+			const targetH = 100;
+			const sizes = buttons.map((b) =>
+				buttonSizeFromTexture(this, b.key, { targetH, fallbackW: 156, fallbackH: 60 }),
+			);
+			const gap = 14;
+			const totalW = sizes.reduce((acc, s) => acc + s.width, 0) + (buttons.length - 1) * gap;
+			let cursorX = (width - totalW) / 2;
+			buttons.forEach((b, i) => {
+				const s = sizes[i]!;
+				const x = cursorX + s.width / 2;
+				makeButton({
+					scene: this, x, y: btnY,
+					targetH, fallbackW: s.width, fallbackH: s.height,
+					textureKey: b.key, fallbackColor: b.bg,
+					label: b.label,
+					onClick: b.cb,
+				});
+				cursorX += s.width + gap;
+			});
+		}
 
 		// 成就解鎖通知（若這次結算前有新解鎖的成就）
 		showAchievementUnlockedPopups(this, AchievementSystem.consumePending());
