@@ -78,6 +78,25 @@ document.addEventListener("webkitfullscreenchange", refreshScaleStaggered);
 if (window.visualViewport) {
 	window.visualViewport.addEventListener("resize", refreshScale);
 }
+// 桌機跨螢幕（DPR 不同的顯示器）：window.resize 通常會觸發，且 DPR 變動時
+// matchMedia(`(resolution: ${dpr}dppx)`) 也會觸發。兩個都監聽以求保險。
+window.addEventListener("resize", refreshScale);
+watchDevicePixelRatio(refreshScale);
+
+// 動態訂閱當前 DPR 的 media query：當 DPR 變了，舊 query 觸發 → 重新訂閱新 DPR
+// 這是 W3C 推薦的「監聽 devicePixelRatio 變動」做法（DPR 是連續值，不是固定列舉）
+function watchDevicePixelRatio(onChange: () => void): void {
+	const subscribe = () => {
+		const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+		const handler = () => {
+			mq.removeEventListener("change", handler);
+			onChange();
+			subscribe();
+		};
+		mq.addEventListener("change", handler);
+	};
+	subscribe();
+}
 
 // 開發模式：將 game 暴露在 window 方便除錯
 if (import.meta.env?.MODE === "development") {
