@@ -209,7 +209,12 @@ export class StageSelectScene extends Phaser.Scene {
 	 * 困難級全破過至少一次才可點擊；未解鎖灰色顯示。
 	 */
 	private makeSurvivalButton(x: number, y: number): void {
-		const unlocked = SaveSystem.getBestEnding("hard") !== null;
+		// 解鎖條件：困難級第 5 關通過過至少一次（getUnlocked 會回傳「下一關 stageId」=
+		// 最後一關 +1）。
+		// 不能用 getBestEnding("hard") 判斷，因為玩家通關第 5 關後若沒按「繼續」進
+		// EndingScene、bestEnding 不會被寫入，會導致已全破卻看不到入口。
+		const lastStageId = STAGES[STAGES.length - 1]!.id;
+		const unlocked = SaveSystem.getUnlocked("hard") > lastStageId;
 		const best = SaveSystem.getSurvivalBest();
 
 		// 圖片有則用圖、無則 rectangle fallback
