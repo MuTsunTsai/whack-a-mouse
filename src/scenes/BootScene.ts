@@ -5,6 +5,7 @@ import Phaser from "phaser";
 import { getAllCreatureImages } from "../config/creatures.ts";
 import { STAGES } from "../config/stages.ts";
 import { MuteSystem } from "../systems/MuteSystem.ts";
+import { resolveAudioUrl, resolveImageUrl } from "../utils/assetResolver.ts";
 import { addText } from "../utils/text.ts";
 
 export class BootScene extends Phaser.Scene {
@@ -75,15 +76,14 @@ export class BootScene extends Phaser.Scene {
 		];
 
 		// 音訊資源（mp3 / ogg / wav 任一存在即可）
+		// 註：bgm-game-boss / bgm-ending-good / bgm-ending-bad 三支大檔（共 ~15MB）
+		//     改由 LazyLoader 在 StartScene 後背景下載
 		const audios = [
 			// BGM
 			{ key: "bgm-title", name: "bgm-title" },
 			{ key: "bgm-game", name: "bgm-game" },
-			{ key: "bgm-game-boss", name: "bgm-game-boss" },
 			{ key: "bgm-stage-clear", name: "bgm-stage-clear" },
 			{ key: "bgm-gameover", name: "bgm-gameover" },
-			{ key: "bgm-ending-good", name: "bgm-ending-good" },
-			{ key: "bgm-ending-bad", name: "bgm-ending-bad" },
 			// 音效
 			{ key: "sfx-click", name: "sfx-click" },
 			{ key: "sfx-hit", name: "sfx-hit" },
@@ -335,47 +335,4 @@ export class BootScene extends Phaser.Scene {
 	}
 }
 
-// 檢查靜態圖檔是否真的存在。
-// 注意：Rsbuild dev server 對不存在的 public/ 路徑會回 200 + HTML（SPA fallback），
-// 所以單看 res.ok 會誤判。要進一步確認 Content-Type 是 image/*。
-async function assetExists(url: string): Promise<boolean> {
-	try {
-		const res = await fetch(url, { method: "HEAD" });
-		if(!res.ok) {
-			return false;
-		}
-		const contentType = res.headers.get("content-type") ?? "";
-		return contentType.startsWith("image/");
-	} catch {
-		return false;
-	}
-}
-
-// 嘗試多種副檔名找到實際存在的圖檔；找不到回傳 null。
-async function resolveImageUrl(name: string): Promise<string | null> {
-	for(const ext of ["png", "jpg", "jpeg", "webp"]) {
-		const url = `assets/images/${name}.${ext}`;
-		if(await assetExists(url)) {
-			return url;
-		}
-	}
-	return null;
-}
-
-// 嘗試多種副檔名找到實際存在的音訊檔；找不到回傳 null。
-async function resolveAudioUrl(name: string): Promise<string | null> {
-	for(const ext of ["mp3", "ogg", "wav", "m4a"]) {
-		const url = `assets/audio/${name}.${ext}`;
-		try {
-			const res = await fetch(url, { method: "HEAD" });
-			if(!res.ok) continue;
-			const ct = res.headers.get("content-type") ?? "";
-			if(ct.startsWith("audio/") || ct.startsWith("application/octet-stream")) {
-				return url;
-			}
-		} catch {
-			// 忽略
-		}
-	}
-	return null;
-}
+// resolveImageUrl / resolveAudioUrl 已抽到 src/utils/assetResolver.ts 共用

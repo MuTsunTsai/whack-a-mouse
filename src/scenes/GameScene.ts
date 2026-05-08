@@ -23,6 +23,7 @@ import { SfxSystem } from "../systems/SfxSystem.ts";
 import { SpawnSystem } from "../systems/SpawnSystem.ts";
 import { pickBomb, pickHitMouse, pickMissKill } from "../utils/taunt.ts";
 import { addText } from "../utils/text.ts";
+import { waitForAsset } from "../utils/waitForAsset.ts";
 
 interface GameSceneData {
 	stageId: number;
@@ -117,7 +118,9 @@ export class GameScene extends Phaser.Scene {
 		this.drawBackground();
 		// 最後一關（大安魔王關）使用獨立 BGM；其他關卡用通用遊戲 BGM
 		const isFinalStage = this.stage.id === STAGES[STAGES.length - 1]!.id;
-		MusicSystem.play(this, isFinalStage ? "bgm-game-boss" : "bgm-game");
+		const bgmKey = isFinalStage ? "bgm-game-boss" : "bgm-game";
+		// 大安魔王 BGM 是延後載入的大檔；若未到位則先顯示 loading 等待
+		waitForAsset(this, bgmKey, () => MusicSystem.play(this, bgmKey));
 
 		this.score = new ScoreSystem();
 		this.charge = new ChargeSystem(this.mod.initialBombs);

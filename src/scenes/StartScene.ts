@@ -3,6 +3,7 @@
 // 由於這次點擊算「使用者互動」，TitleScene 一進去就能直接播放 BGM
 
 import Phaser from "phaser";
+import { LazyLoader } from "../systems/LazyLoader.ts";
 import { SfxSystem } from "../systems/SfxSystem.ts";
 import { enterFullscreenAndLockLandscape } from "../utils/fullscreen.ts";
 import { addText } from "../utils/text.ts";
@@ -70,6 +71,10 @@ export class StartScene extends Phaser.Scene {
 			fontSize: "20px",
 			color: "#aaaaaa",
 		}).setOrigin(0.5);
+
+		// 在背景啟動延遲資源下載（魔王關 BGM、結局 BGM 等大檔）
+		// 不阻擋啟動畫面，玩家進到 TitleScene / 第 1 關時通常已下載完成
+		LazyLoader.start(this.game);
 
 		// 點擊 / 觸控 / 鍵盤皆可進入；趁這次互動主動 resume AudioContext，
 		// 並 await 完成、確認真的進入 running 狀態才切 scene。

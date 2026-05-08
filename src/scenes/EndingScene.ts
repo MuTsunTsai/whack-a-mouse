@@ -14,6 +14,7 @@ import { showAchievementUnlockedPopups } from "../utils/achievementPopup.ts";
 import { makeButton } from "../utils/button.ts";
 import { buttonSizeFromTexture } from "../utils/buttonSize.ts";
 import { addText } from "../utils/text.ts";
+import { waitForAsset } from "../utils/waitForAsset.ts";
 
 interface EndingSceneData {
 	ending: Ending;
@@ -58,8 +59,9 @@ export class EndingScene extends Phaser.Scene {
 		// 註：安鼠高手 / 達人 / 神人 成就在 GameOverScene 第五關過關時就已解鎖，
 		// 玩家在過關畫面就能看到通知，不延後到結局。
 
-		// BGM
-		MusicSystem.play(this, isGood ? "bgm-ending-good" : "bgm-ending-bad");
+		// BGM（結局 BGM 是延後載入的大檔；若未到位則顯 loading 等待）
+		const bgmKey = isGood ? "bgm-ending-good" : "bgm-ending-bad";
+		waitForAsset(this, bgmKey, () => MusicSystem.play(this, bgmKey));
 
 		// 背景圖
 		const bgKey = `bg-ending-${ending}`;
