@@ -612,6 +612,11 @@ export class GameScene extends Phaser.Scene {
 		if (count >= n) {
 			// 漢他爆發 → 血條定格在滿血、停止閃爍，避免玩家誤會「為什麼條沒滿就 game over」
 			this.hud.setHanta(n, n, 0);
+			// 觸發漢他的「最後一隻老鼠」也要閃紅光（否則它剛冒出就直接被 freeze、
+			// 永遠看不到警報外觀）。用 level 2 的快閃週期，與其他老鼠視覺一致。
+			for (const m of this.liveMice) {
+				m.setFlicker(130);
+			}
 			this.gameOver("hanta");
 			return;
 		}

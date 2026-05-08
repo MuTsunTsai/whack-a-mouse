@@ -70,6 +70,8 @@ export class Creature {
 	// 瞬移時用：當 retract 處理完且決定 teleport 後，下次的 lifespanMs
 	private retractStrategy: RetractStrategy = "destroy";
 	private nextLifespanMs: number = 0;
+	// 凍結（漢他爆發後）：保留 visual + 進行中的瞬移動畫，但不再排程下一輪 retract
+	private frozen: boolean = false;
 
 	constructor(scene: Phaser.Scene, hole: Hole, type: CreatureType, lifespanMs: number) {
 		this.scene = scene;
@@ -265,8 +267,10 @@ export class Creature {
 		if (this.retractStrategy !== "destroy") {
 			plannedHole = this.retractStrategy();
 			if (plannedHole === null) {
-				// 不縮回：重設 retract 計時、保留呼吸動畫
+				// 不縮回：重設 retract 計時、保留呼吸動畫（已 freeze 則不再排下一輪）
 				this.retractTimer?.remove();
+				this.retractTimer = undefined;
+				if (this.frozen) return;
 				this.retractTimer = this.scene.time.delayedCall(this.nextLifespanMs, () => {
 					if (this.alive) this.retract();
 				});
@@ -367,25 +371,30 @@ export class Creature {
 		// 重新冒出
 		this.playEmerge();
 
-		// 重新計時下一次 retract
+		// 重新計時下一次 retract（除非已被 freeze：漢他後不再啟動新一輪 retract）
 		this.retractTimer?.remove();
+		if (this.frozen) return;
 		this.retractTimer = this.scene.time.delayedCall(lifespanMs, () => {
 			if (this.alive) this.retract();
 		});
 	}
 
 	/**
-	 * 凍結：停止所有「會主動改變狀態」的 timer / tween，但保留 visual + flicker。
+	 * 凍結：保留 visual + flicker，並讓「進行中的瞬移動畫繼續播完」，但不再排下一輪。
 	 * 用於 game over（特別是漢他爆發）時：希望畫面定格在當下狀態，
 	 * 直到場景切換時 destroy 才完全消失。
-	 *  - 停掉 retract timer：不會再退場 / 瞬移
+	 *  - 不停 retractTween：若老鼠剛好在瞬移動畫中，讓它播完到新洞（避免「卡在中間像消失」）
+	 *  - 取消 retractTimer：不會再排下一次 retract（teleportTo 內也會檢查 frozen 不再重排）
 	 *  - 停掉 breathing：不會繼續上下擺動
 	 *  - 保留 flicker：漢他爆發時的閃紅效果是視覺重點，要留下來
 	 *  - 保留 visual：圖案留在洞口
 	 */
 	freeze(): void {
-		this.cancelRetract();
+		this.frozen = true;
+		this.retractTimer?.remove();
+		this.retractTimer = undefined;
 		this.stopBreathing();
+		// 不停 retractTween — 讓進行中的瞬移動畫播完
 		// 不呼叫 stopFlicker — 故意保留漢他閃紅效果
 	}
 
