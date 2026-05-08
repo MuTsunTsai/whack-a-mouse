@@ -12,6 +12,7 @@ import { Hammer } from "../objects/Hammer.ts";
 import { Hole } from "../objects/Hole.ts";
 import { HUD } from "../objects/HUD.ts";
 import { PoisonBomb } from "../objects/PoisonBomb.ts";
+import { AchievementSystem } from "../systems/AchievementSystem.ts";
 import { Analytics } from "../systems/Analytics.ts";
 import { ChargeSystem } from "../systems/ChargeSystem.ts";
 import { MusicSystem } from "../systems/MusicSystem.ts";
@@ -25,6 +26,7 @@ import { addText } from "../utils/text.ts";
 
 interface GameSceneData {
 	stageId: number;
+	survival?: boolean; // 生存模式：時間無限、漢他爆發即結束、結算跳 SurvivalEndScene
 }
 
 export type GameOverReason = "hanta" | "stage-end";
@@ -53,6 +55,12 @@ export class GameScene extends Phaser.Scene {
 	private stageSecondsLeft: number = 0;
 	private over: boolean = false;
 	private bombsUsedThisStage: number = 0;
+	// 關卡實際開始的時間戳（用 Date.now()），給「出師不利」成就用
+	private stageStartedAt: number = 0;
+	// 生存模式 flag：時間無限、計時改為正向、結算跳 SurvivalEndScene
+	private survival: boolean = false;
+	// 生存模式累計秒數（正向計時）
+	private survivalSeconds: number = 0;
 	/**
 	 * 炸彈動畫進行中：true 期間暫停 spawn 新生物。
 	 * 視覺上避免「炸彈剛清場 → 新動物立刻冒出」的違和感（會讓玩家誤以為沒炸到）。
@@ -83,16 +91,18 @@ export class GameScene extends Phaser.Scene {
 	private mobileActiveTouches: number = 0;
 
 	init(data: GameSceneData): void {
+		this.survival = data.survival === true;
 		this.stage = getStageById(data.stageId);
 
-		// 套用難度
-		const difficulty = RunState.getDifficulty();
+		// 套用難度：生存模式強制 hard、不依賴 RunState（生存模式不算在一般 run 裡）
+		const difficulty = this.survival ? "hard" : RunState.getDifficulty();
 		this.mod = DIFFICULTY[difficulty];
 		this.effectiveStage = applyDifficulty(this.stage, this.mod);
 
 		this.holes = [];
 		this.creatures = new Set();
 		this.stageSecondsLeft = Math.round(this.effectiveStage.durationSec);
+		this.survivalSeconds = 0;
 		this.over = false;
 		this.bombsUsedThisStage = 0;
 
@@ -121,10 +131,16 @@ export class GameScene extends Phaser.Scene {
 		// 初始化 HUD 顯示
 		this.hud.setCharge(this.charge.charge, this.charge.bombStock);
 
-		this.hud.setStageName(`第 ${this.stage.id} 關 ${this.stage.name}（${this.mod.label}）`);
-		this.hud.setPassScore(this.effectiveStage.passScore);
+		if (this.survival) {
+			this.hud.setStageName(`生存模式　${this.stage.name}`);
+			this.hud.setPassScore(0); // 生存模式無過關門檻
+			this.hud.setSurvivalTimer(0); // 從 0 起算正向計時
+		} else {
+			this.hud.setStageName(`第 ${this.stage.id} 關 ${this.stage.name}（${this.mod.label}）`);
+			this.hud.setPassScore(this.effectiveStage.passScore);
+			this.hud.setStageTimer(this.stageSecondsLeft);
+		}
 		this.hud.setScore(0);
-		this.hud.setStageTimer(this.stageSecondsLeft);
 		this.hud.setHanta(0, this.hantaThreshold, 0);
 
 		this.layoutHoles();
@@ -135,6 +151,7 @@ export class GameScene extends Phaser.Scene {
 			loop: true,
 			callback: () => this.tickStage(),
 		});
+		this.stageStartedAt = Date.now();
 
 		this.input.keyboard?.on("keydown-SPACE", () => this.tryDetonate());
 
@@ -293,6 +310,9 @@ export class GameScene extends Phaser.Scene {
 			}
 		}
 		if (nearest && nearestDist <= HAMMER.hitRadius) {
+			// 命中：先做計分 / 集氣 / 浮出（讓 +N 在打中的瞬間就出現），
+			// 再播 hitByHammer 的「敗北抖動 + 落洞」動畫
+			this.handleHit(nearest);
 			nearest.hitByHammer();
 		} else {
 			// 揮空：中斷 combo，但仍給少量集氣（mouse 的 missChargeGainRate 倍）
@@ -410,10 +430,9 @@ export class GameScene extends Phaser.Scene {
 			});
 		}
 
-		creature.onExit((reason, self) => {
-			if (reason === "hit") {
-				this.handleHit(self);
-			}
+		creature.onExit((_reason, self) => {
+			// 計分與浮出已在「揮槌命中」當下立即處理（resolveWhackHit），
+			// 這裡不再呼叫 handleHit，避免延遲到動畫結束才浮出 +N。
 			// 任何 exit reason 都釋放洞 + 從 creatures 移除
 			this.spawn.markFree(self.hole.index);
 			// 若死亡時 retract strategy 已卡位新洞但還沒 teleport 過去 → 一併釋放，避免 leak
@@ -440,8 +459,30 @@ export class GameScene extends Phaser.Scene {
 			? Math.round(def.hitScore * this.mod.hitScoreMultiplier)
 			: Math.round(def.hitScore * this.mod.penaltyMultiplier); // hitScore 對無辜本來就是負數
 
-		this.score.registerHit(creature.type, score);
+		const actualDelta = this.score.registerHit(creature.type, score);
 		this.charge.add(def.chargeGain);
+		// 浮出得分：在動物的右上角（往右上偏移）
+		this.hud.showScoreDelta(actualDelta, creature.hole.x + 30, creature.hole.y - 40);
+
+		// 成就：無辜動物被槌子打中也算「動物殺手」累計
+		if (!isMouse) {
+			RunState.addInnocentHit();
+			this.checkAnimalKillerUnlock();
+		}
+
+		// 成就：垂死掙扎（場上老鼠數已達 threshold-1、再多一隻就漢他爆發時，徒手槌中老鼠）
+		// 注意：呼叫端尚未從 liveMice 拿掉自己，所以 size 包含本隻 → 判定 size === threshold-1
+		if (isMouse && this.liveMice.size === this.hantaThreshold - 1) {
+			const total = SaveSystem.incrementLastGaspCount();
+			if (total >= 30) {
+				AchievementSystem.unlock("last_gasp");
+			}
+		}
+
+		// 成就：精準打擊（combo 達 30）
+		if (isMouse && this.score.snapshot.combo >= 30) {
+			AchievementSystem.unlock("precision_strike");
+		}
 
 		// 注意：新機制下，老鼠數的扣減已在 onExit("hit") 中處理（從 liveMice 移除 + updateHantaUI）；
 		// 這裡只處理分數、集氣、台詞。
@@ -461,6 +502,8 @@ export class GameScene extends Phaser.Scene {
 		this.charge.consume();
 		this.bombsUsedThisStage += 1;
 		RunState.markBombUsed();
+		// 成就：累積跨 run 的炸彈使用數
+		this.checkPoisonManiacUnlock();
 		// 手機版：清空積壓的點擊（避免炸完還繼續執行舊揮擊）
 		if (this.isMobile) this.clearMobileTapQueue();
 		// 用炸彈中斷 combo（即使炸到老鼠也算）
@@ -480,8 +523,14 @@ export class GameScene extends Phaser.Scene {
 				? def.bombScore // 老鼠正得分不套 penalty
 				: Math.round(def.bombScore * this.mod.penaltyMultiplier);
 			this.score.registerBombKill(creature.type, score);
+			this.hud.showScoreDelta(score, creature.hole.x + 30, creature.hole.y - 40);
 			creature.bombKill();
+			// 成就：被炸彈炸到的無辜動物也算「動物殺手」累計
+			if (creature.type !== "mouse") {
+				RunState.addInnocentHit();
+			}
 		}
+		this.checkAnimalKillerUnlock();
 
 		this.hud.showTaunt(pickBomb(), width / 2, height / 2 - 100, "#ffee77");
 		const innocent = result.cat + result.dog + result.owl + result.hawk;
@@ -509,6 +558,12 @@ export class GameScene extends Phaser.Scene {
 
 	private tickStage(): void {
 		if (this.over) return;
+		if (this.survival) {
+			// 生存模式：正向計時，無時限（漢他爆發才會結束）
+			this.survivalSeconds += 1;
+			this.hud.setSurvivalTimer(this.survivalSeconds);
+			return;
+		}
 		this.stageSecondsLeft -= 1;
 		this.hud.setStageTimer(this.stageSecondsLeft);
 		if (this.stageSecondsLeft <= 0) {
@@ -580,6 +635,10 @@ export class GameScene extends Phaser.Scene {
 			for (const c of this.creatures.values()) {
 				c.freeze();
 			}
+			// 成就：出師不利（開局 5 秒內漢他爆發）
+			if (Date.now() - this.stageStartedAt <= 5000) {
+				AchievementSystem.unlock("bad_start");
+			}
 		} else {
 			for (const c of this.creatures.values()) {
 				c.destroy();
@@ -589,6 +648,23 @@ export class GameScene extends Phaser.Scene {
 		}
 
 		const snapshot = this.score.snapshot;
+
+		// 生存模式：跳過所有「過關 / 解鎖 / RunState 統計 / Analytics 陣亡」邏輯，
+		// 直接切到 SurvivalEndScene 顯示結算。
+		if (this.survival) {
+			this.playGameOverBanner(reason, false, () => {
+				this.scene.start("SurvivalEndScene", {
+					survivedSec: this.survivalSeconds,
+					score: snapshot.score,
+					mouseHit: snapshot.mouseHit,
+					innocentHit: snapshot.innocentHit,
+					maxCombo: snapshot.maxCombo,
+					bombsUsedThisStage: this.bombsUsedThisStage,
+				});
+			});
+			return;
+		}
+
 		const passed = reason === "stage-end" && snapshot.score >= this.effectiveStage.passScore;
 
 		const difficulty = RunState.getDifficulty();
@@ -717,6 +793,20 @@ export class GameScene extends Phaser.Scene {
 				},
 			});
 		});
+	}
+
+	// 成就：毒餌狂魔（單一場 run 內釋放 15 次老鼠藥）
+	private checkPoisonManiacUnlock(): void {
+		if (RunState.getBombsUsed() >= 15) {
+			AchievementSystem.unlock("poison_maniac");
+		}
+	}
+
+	// 成就：動物殺手（單一場 run 內打中 30 次無辜動物）
+	private checkAnimalKillerUnlock(): void {
+		if (RunState.getInnocentHitCount() >= 30) {
+			AchievementSystem.unlock("animal_killer");
+		}
 	}
 }
 

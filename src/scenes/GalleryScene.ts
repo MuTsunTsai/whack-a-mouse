@@ -11,10 +11,11 @@ import { makeButton } from "../utils/button.ts";
 import { buttonSizeFromTexture } from "../utils/buttonSize.ts";
 import { addText } from "../utils/text.ts";
 
-const COLS = 3;
-const CARD_WIDTH = 320;
-const CARD_HEIGHT = 180; // 16:9 aspect
-const CARD_GAP = 20;
+// 3-4-3 陣型：第一列 3 張、第二列 4 張、第三列 3 張，共 10 張
+const ROW_COUNTS = [3, 4, 3];
+const CARD_WIDTH = 260;
+const CARD_HEIGHT = 146; // 16:9 aspect（260 × 146）
+const CARD_GAP = 18;
 
 export class GalleryScene extends Phaser.Scene {
 	constructor() {
@@ -45,19 +46,23 @@ export class GalleryScene extends Phaser.Scene {
 			color: "#aaaaaa",
 		}).setOrigin(0.5);
 
-		// 網格佈局：3 欄、3 列（9 張剛好排滿）
-		const rows = Math.ceil(GALLERY_ENTRIES.length / COLS);
-		const totalW = COLS * CARD_WIDTH + (COLS - 1) * CARD_GAP;
+		// 網格佈局：3-4-3 陣型（共 10 張）。每列獨立置中，列之間固定間距。
+		const rows = ROW_COUNTS.length;
 		const totalH = rows * CARD_HEIGHT + (rows - 1) * CARD_GAP;
-		const startX = (width - totalW) / 2 + CARD_WIDTH / 2;
 		const startY = (height - totalH) / 2 + CARD_HEIGHT / 2 + 20;
 
-		GALLERY_ENTRIES.forEach((entry, i) => {
-			const r = Math.floor(i / COLS);
-			const c = i % COLS;
-			const x = startX + c * (CARD_WIDTH + CARD_GAP);
-			const y = startY + r * (CARD_HEIGHT + CARD_GAP);
-			this.makeCard(x, y, entry);
+		let cursor = 0;
+		ROW_COUNTS.forEach((count, rowIndex) => {
+			const rowW = count * CARD_WIDTH + (count - 1) * CARD_GAP;
+			const rowStartX = (width - rowW) / 2 + CARD_WIDTH / 2;
+			const y = startY + rowIndex * (CARD_HEIGHT + CARD_GAP);
+			for (let c = 0; c < count; c++) {
+				const entry = GALLERY_ENTRIES[cursor];
+				if (!entry) return;
+				const x = rowStartX + c * (CARD_WIDTH + CARD_GAP);
+				this.makeCard(x, y, entry);
+				cursor += 1;
+			}
 		});
 
 		// 返回按鈕：左下角，按鈕中心 X 留 80px margin → 算法為 width/2 + margin

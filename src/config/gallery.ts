@@ -22,4 +22,6 @@ export const GALLERY_ENTRIES: GalleryEntry[] = [
 	// 結局插畫（2）
 	{ cgKey: "bg-ending-good", title: "Good Ending・親力親為", hint: "達成 Good 結局" },
 	{ cgKey: "bg-ending-bad", title: "Bad Ending・生態崩盤", hint: "達成 Bad 結局" },
+	// 生存模式插畫（1）
+	{ cgKey: "bg-survival-end", title: "生存模式・力竭倒地", hint: "在生存模式中力竭" },
 ];

@@ -14,6 +14,13 @@ interface RunStateData {
 	totalScore: number; // 跨關卡累積分
 	totalMouseHit: number;
 	totalInnocentHit: number;
+	// 「乾淨通關」flag：成就「安鼠高手 / 達人 / 神人」用
+	// 任何「失敗 / 重玩 / 退出 / 使用炸彈」都會把它打成 false
+	cleanRun: boolean;
+	// 跨 run 計數（成就「毒餌狂魔 / 動物殺手」用）
+	// 只在 RunState.start 時重置 → 退出選關 / 主畫面導致 RunState.end → 下一場 start 時歸零
+	bombsUsed: number;
+	innocentHitCount: number;
 }
 
 let current: RunStateData | null = null;
@@ -27,6 +34,9 @@ export const RunState = {
 			totalScore: 0,
 			totalMouseHit: 0,
 			totalInnocentHit: 0,
+			cleanRun: true,
+			bombsUsed: 0,
+			innocentHitCount: 0,
 		};
 	},
 
@@ -46,11 +56,42 @@ export const RunState = {
 	markBombUsed(): void {
 		if (current) {
 			current.bombUsed = true;
+			current.cleanRun = false;
+			current.bombsUsed += 1;
 		}
 	},
 
 	wasBombUsed(): boolean {
 		return current?.bombUsed ?? false;
+	},
+
+	getBombsUsed(): number {
+		return current?.bombsUsed ?? 0;
+	},
+
+	// 紀錄一次無辜動物被打中（不分被槌子或炸彈）
+	addInnocentHit(): void {
+		if (current) {
+			current.innocentHitCount += 1;
+		}
+	},
+
+	getInnocentHitCount(): number {
+		return current?.innocentHitCount ?? 0;
+	},
+
+	// 任何破壞「連續無瑕通關」條件的事件呼叫此函式：
+	//   - 關卡失敗
+	//   - 過關後選擇「再挑戰」（回頭重玩）
+	//   - 退出到選關 / 主畫面
+	breakCleanRun(): void {
+		if (current) {
+			current.cleanRun = false;
+		}
+	},
+
+	isCleanRun(): boolean {
+		return current?.cleanRun ?? false;
 	},
 
 	registerStageResult(args: {

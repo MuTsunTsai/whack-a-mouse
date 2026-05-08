@@ -5,10 +5,12 @@
 
 import Phaser from "phaser";
 import { DIFFICULTY } from "../config/difficulty.ts";
+import { AchievementSystem } from "../systems/AchievementSystem.ts";
 import { Analytics } from "../systems/Analytics.ts";
 import { MusicSystem } from "../systems/MusicSystem.ts";
 import { RunState } from "../systems/RunState.ts";
 import { SaveSystem, type Ending } from "../systems/SaveSystem.ts";
+import { showAchievementUnlockedPopups } from "../utils/achievementPopup.ts";
 import { makeButton } from "../utils/button.ts";
 import { buttonSizeFromTexture } from "../utils/buttonSize.ts";
 import { addText } from "../utils/text.ts";
@@ -53,6 +55,17 @@ export class EndingScene extends Phaser.Scene {
 
 		// CG 收集
 		SaveSystem.unlockCg(`bg-ending-${ending}`);
+
+		// 成就：安鼠高手 / 達人 / 神人 — 五關全破且整場 run 都「乾淨通關」
+		// （沒用過炸彈、沒失敗、沒重玩、沒退出選關 / 主畫面）
+		if (RunState.isCleanRun()) {
+			const id = difficulty === "easy"
+				? "expert_easy"
+				: difficulty === "normal"
+					? "expert_normal"
+					: "expert_hard";
+			AchievementSystem.unlock(id);
+		}
 
 		// BGM
 		MusicSystem.play(this, isGood ? "bgm-ending-good" : "bgm-ending-bad");
@@ -158,5 +171,8 @@ export class EndingScene extends Phaser.Scene {
 				this.scene.start("TitleScene");
 			},
 		});
+
+		// 成就解鎖通知（若這次結算前有新解鎖的成就）
+		showAchievementUnlockedPopups(this, AchievementSystem.consumePending());
 	}
 }

@@ -266,6 +266,11 @@ export class HUD {
 		this.stageTimerText.setText(`關卡剩餘 ${Math.max(0, Math.ceil(secondsLeft))} 秒`);
 	}
 
+	/** 生存模式專用：顯示已存活的秒數（正向計時）。 */
+	setSurvivalTimer(secondsAlive: number): void {
+		this.stageTimerText.setText(`存活時間 ${Math.max(0, Math.floor(secondsAlive))} 秒`);
+	}
+
 	/**
 	 * 漢他血條更新。
 	 *  current：畫面上目前活著的老鼠數
@@ -554,6 +559,36 @@ export class HUD {
 		g.lineTo(lx, y + h);
 		g.closePath();
 		g.strokePath();
+	}
+
+	/**
+	 * 在指定座標（被打中動物的右上角）浮出 +N / -N 的得分變化提示。
+	 * 正分金色、負分紅色，上飄淡出。
+	 */
+	showScoreDelta(delta: number, x: number, y: number): void {
+		if (delta === 0) return;
+
+		const isPositive = delta > 0;
+		const text = isPositive ? `+${delta}` : `${delta}`;
+		const color = isPositive ? "#ffeb70" : "#ff6655";
+		const popup = addText(this.scene, x, y, text, {
+			fontSize: "52px",
+			color,
+			fontStyle: "bold",
+			stroke: "#000000",
+			strokeThickness: 6,
+		})
+			.setOrigin(0, 1)
+			.setDepth(202);
+
+		this.scene.tweens.add({
+			targets: popup,
+			y: y - 80,
+			alpha: 0,
+			duration: 700,
+			ease: "Quad.Out",
+			onComplete: () => popup.destroy(),
+		});
 	}
 
 	showTaunt(text: string, x: number, y: number, color: string = "#ffffff"): void {

@@ -8,6 +8,7 @@ import { RunState } from "../systems/RunState.ts";
 import { SaveSystem } from "../systems/SaveSystem.ts";
 import { SfxSystem } from "../systems/SfxSystem.ts";
 import { makeButton } from "../utils/button.ts";
+import { buttonSizeFromTexture } from "../utils/buttonSize.ts";
 import { enterFullscreenAndLockLandscape } from "../utils/fullscreen.ts";
 import { addText } from "../utils/text.ts";
 
@@ -103,8 +104,8 @@ export class TitleScene extends Phaser.Scene {
 			},
 		).setOrigin(0.5);
 
-		// CG 回憶按鈕（位於玩法說明下方、底部進度提示上方）
-		this.makeGalleryButton(width / 2, height - 80);
+		// CG 回憶 + 成就：兩顆按鈕並排（位於玩法說明下方、底部進度提示上方）
+		this.makeBottomButtons(width / 2, height - 80);
 
 		// 底部進度提示
 		const last = SaveSystem.getLastDifficulty();
@@ -158,13 +159,31 @@ export class TitleScene extends Phaser.Scene {
 		refresh();
 	}
 
-	private makeGalleryButton(x: number, y: number): void {
+	private makeBottomButtons(centerX: number, y: number): void {
+		const targetH = 90;
+		const gap = 20;
+		const gallerySize = buttonSizeFromTexture(this, "btn-gallery", { targetH, fallbackW: 180, fallbackH: 40 });
+		// 成就入口暫用 btn-next-ending 素材（依使用者指定）
+		const achvSize = buttonSizeFromTexture(this, "btn-next-ending", { targetH, fallbackW: 180, fallbackH: 40 });
+
+		const totalW = gallerySize.width + gap + achvSize.width;
+		const startX = centerX - totalW / 2;
+
 		makeButton({
-			scene: this, x, y,
-			targetH: 90, fallbackW: 180, fallbackH: 40,
+			scene: this,
+			x: startX + gallerySize.width / 2, y,
+			targetH, fallbackW: gallerySize.width, fallbackH: gallerySize.height,
 			textureKey: "btn-gallery", fallbackColor: 0x4a4a6a,
 			label: "CG 回憶", fontSize: "22px",
 			onClick: () => this.scene.start("GalleryScene"),
+		});
+		makeButton({
+			scene: this,
+			x: startX + gallerySize.width + gap + achvSize.width / 2, y,
+			targetH, fallbackW: achvSize.width, fallbackH: achvSize.height,
+			textureKey: "btn-next-ending", fallbackColor: 0xddaa44,
+			label: "成就", fontSize: "22px",
+			onClick: () => this.scene.start("AchievementScene"),
 		});
 	}
 

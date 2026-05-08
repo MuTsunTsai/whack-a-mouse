@@ -4,6 +4,7 @@ import "./styles.css";
 import Phaser from "phaser";
 import { BALANCE } from "./config/balance.ts";
 import { showInAppBrowserNoticeIfNeeded } from "./systems/InAppBrowserNotice.ts";
+import { AchievementScene } from "./scenes/AchievementScene.ts";
 import { BootScene } from "./scenes/BootScene.ts";
 import { EndingScene } from "./scenes/EndingScene.ts";
 import { GalleryScene } from "./scenes/GalleryScene.ts";
@@ -12,6 +13,7 @@ import { GameScene } from "./scenes/GameScene.ts";
 import { MuteToggleScene } from "./scenes/MuteToggleScene.ts";
 import { StageSelectScene } from "./scenes/StageSelectScene.ts";
 import { StartScene } from "./scenes/StartScene.ts";
+import { SurvivalEndScene } from "./scenes/SurvivalEndScene.ts";
 import { TitleScene } from "./scenes/TitleScene.ts";
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -32,7 +34,7 @@ const config: Phaser.Types.Core.GameConfig = {
 		// 對角度為 0 度的圖元實施像素對齊，銳利度更佳
 		pixelArt: false,
 	},
-	scene: [BootScene, StartScene, TitleScene, StageSelectScene, GameScene, GameOverScene, EndingScene, GalleryScene, MuteToggleScene],
+	scene: [BootScene, StartScene, TitleScene, StageSelectScene, GameScene, GameOverScene, EndingScene, SurvivalEndScene, GalleryScene, AchievementScene, MuteToggleScene],
 };
 
 // 偵測 in-app 瀏覽器（FB / IG / LINE 等內嵌 webview）→ 提示用戶改用外部瀏覽器

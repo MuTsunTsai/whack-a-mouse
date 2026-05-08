@@ -20,10 +20,29 @@ interface SaveData {
 	bestEnding: { [diff in Difficulty]?: Ending };
 	// 已解鎖的插畫 key 列表（不依難度，跨難度共享收集進度）
 	unlockedCgs: string[];
+	// 已解鎖的成就 id 列表（跨難度共享）
+	unlockedAchievements: string[];
+	// 已完成的關卡總次數（不分輸贏；成就「安鼠鐵粉」用）
+	stagesCompleted: number;
+	// 「垂死掙扎」累計：漢他閾值 -1 時徒手槌中老鼠的次數（跨 session）
+	lastGaspCount: number;
+	// 生存模式最高紀錄（兩者各自獨立累計）
+	survivalBestSec: number;
+	survivalBestScore: number;
 }
 
 function emptyData(): SaveData {
-	return { highScores: {}, unlocked: {}, bestEnding: {}, unlockedCgs: [] };
+	return {
+		highScores: {},
+		unlocked: {},
+		bestEnding: {},
+		unlockedCgs: [],
+		unlockedAchievements: [],
+		stagesCompleted: 0,
+		lastGaspCount: 0,
+		survivalBestSec: 0,
+		survivalBestScore: 0,
+	};
 }
 
 // 讀取整份存檔；損毀時靜默回傳空物件並覆寫掉舊值
@@ -52,6 +71,11 @@ function readData(): SaveData {
 		unlocked: data.unlocked ?? {},
 		bestEnding: data.bestEnding ?? {},
 		unlockedCgs: data.unlockedCgs ?? [],
+		unlockedAchievements: data.unlockedAchievements ?? [],
+		stagesCompleted: data.stagesCompleted ?? 0,
+		lastGaspCount: data.lastGaspCount ?? 0,
+		survivalBestSec: data.survivalBestSec ?? 0,
+		survivalBestScore: data.survivalBestScore ?? 0,
 	};
 }
 
@@ -126,6 +150,68 @@ export const SaveSystem = {
 		data.unlockedCgs.push(cgKey);
 		writeData(data);
 		return true;
+	},
+
+	// === 成就解鎖（跨難度共享）===
+	getUnlockedAchievements(): string[] {
+		return readData().unlockedAchievements;
+	},
+
+	isAchievementUnlocked(id: string): boolean {
+		return readData().unlockedAchievements.includes(id);
+	},
+
+	// 解鎖一個成就。回傳 true 表示這次是新解鎖（用來決定要不要彈出通知）。
+	unlockAchievement(id: string): boolean {
+		const data = readData();
+		if (data.unlockedAchievements.includes(id)) return false;
+		data.unlockedAchievements.push(id);
+		writeData(data);
+		return true;
+	},
+
+	// === 已完成關卡總次數（成就「安鼠鐵粉」用，不分輸贏）===
+	getStagesCompleted(): number {
+		return readData().stagesCompleted;
+	},
+
+	incrementStagesCompleted(): number {
+		const data = readData();
+		data.stagesCompleted += 1;
+		writeData(data);
+		return data.stagesCompleted;
+	},
+
+	// === 垂死掙扎累計（成就「垂死掙扎」用，跨 session）===
+	getLastGaspCount(): number {
+		return readData().lastGaspCount;
+	},
+
+	incrementLastGaspCount(): number {
+		const data = readData();
+		data.lastGaspCount += 1;
+		writeData(data);
+		return data.lastGaspCount;
+	},
+
+	// === 生存模式最高紀錄（兩者完全獨立累計）===
+	getSurvivalBest(): { sec: number; score: number } {
+		const data = readData();
+		return { sec: data.survivalBestSec, score: data.survivalBestScore };
+	},
+
+	updateSurvivalBest(sec: number, score: number): void {
+		const data = readData();
+		let dirty = false;
+		if (sec > data.survivalBestSec) {
+			data.survivalBestSec = sec;
+			dirty = true;
+		}
+		if (score > data.survivalBestScore) {
+			data.survivalBestScore = score;
+			dirty = true;
+		}
+		if (dirty) writeData(data);
 	},
 
 	// === 上次選擇的難度（明碼存，純 UI 預選用，不算成就）===

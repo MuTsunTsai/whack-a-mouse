@@ -85,7 +85,7 @@ export class StageSelectScene extends Phaser.Scene {
 			const cardKey = `card-stage-${stage.key}`;
 			const useCardImage = this.textures.exists(cardKey);
 			let cardH = 220;
-			if (useCardImage) {
+			if(useCardImage) {
 				const src = this.textures.get(cardKey).getSourceImage() as { width: number; height: number };
 				cardH = Math.round(cardWidth * (src.height / src.width));
 			}
@@ -95,7 +95,7 @@ export class StageSelectScene extends Phaser.Scene {
 					.rectangle(x, y, cardWidth, cardH, isUnlocked ? stage.bgColor : 0x333333, 1)
 					.setStrokeStyle(3, isUnlocked ? 0xffffff : 0x555555);
 			// 鎖住的圖片版：變暗效果（multiply 中性灰 tint）
-			if (useCardImage && !isUnlocked) {
+			if(useCardImage && !isUnlocked) {
 				const img = cardBg as Phaser.GameObjects.Image;
 				img.setTint(0x555555);
 			}
@@ -144,7 +144,7 @@ export class StageSelectScene extends Phaser.Scene {
 			}).setOrigin(0.5);
 
 			if(isUnlocked) {
-				if (useCardImage) {
+				if(useCardImage) {
 					// 圖片版 hover：+5% 放大（用 displayWidth/Height 避免 setDisplaySize 造成的 scale bug）
 					const img = cardBg as Phaser.GameObjects.Image;
 					cardBg.on("pointerover", () => {
@@ -183,6 +183,12 @@ export class StageSelectScene extends Phaser.Scene {
 			}
 		});
 
+		// 困難級限定：底部中央顯示「生存模式」入口
+		// 解鎖條件：困難級至少全破過一次（無論結局是 good 或 bad，bestEnding 不為 null 即可）
+		if(difficulty === "hard") {
+			this.makeSurvivalButton(width / 2, height - 130);
+		}
+
 		// 返回按鈕：左下角，按鈕中心 X = 24 + width/2
 		const backSize = buttonSizeFromTexture(this, "btn-back", { targetH: 90, fallbackW: 120, fallbackH: 40 });
 		makeButton({
@@ -196,5 +202,94 @@ export class StageSelectScene extends Phaser.Scene {
 				this.scene.start("TitleScene");
 			},
 		});
+	}
+
+	/**
+	 * 生存模式入口（僅困難級顯示）：上半「生存模式」字樣、下半顯示最久時間 / 最高得分。
+	 * 困難級全破過至少一次才可點擊；未解鎖灰色顯示。
+	 */
+	private makeSurvivalButton(x: number, y: number): void {
+		const unlocked = SaveSystem.getBestEnding("hard") !== null;
+		const best = SaveSystem.getSurvivalBest();
+
+		// 圖片有則用圖、無則 rectangle fallback
+		const useImage = this.textures.exists("btn-survival");
+		const w = 432;
+		let h = 132;
+		if(useImage) {
+			const src = this.textures.get("btn-survival").getSourceImage() as { width: number; height: number };
+			h = Math.round(w * (src.height / src.width));
+		}
+		const strokeColor = unlocked ? 0xff6655 : 0x555555;
+		const bg: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle = useImage
+			? this.add.image(x, y, "btn-survival").setDisplaySize(w, h)
+			: this.add
+				.rectangle(x, y, w, h, unlocked ? 0x4a1818 : 0x2a2a2a, 0.85)
+				.setStrokeStyle(3, strokeColor);
+		// 鎖住的圖片版：套用 tint 變暗
+		if(useImage && !unlocked) {
+			(bg as Phaser.GameObjects.Image).setTint(0x555555);
+		}
+
+		// 上半：標題（含鎖頭符號）
+		const titleColor = unlocked ? "#ffeb70" : "#888888";
+		const titleText = unlocked ? "💀 生存模式" : "🔒 生存模式";
+		addText(this, x + 45, y - 22, titleText, {
+			fontSize: "26px",
+			color: titleColor,
+			fontStyle: "bold",
+			stroke: "#000000",
+			strokeThickness: 4,
+		}).setOrigin(0.5);
+
+		// 下半：兩項紀錄（未解鎖顯示提示）
+		if(unlocked) {
+			addText(this, x - 20, y + 22, `最久 ${best.sec} 秒`, {
+				fontSize: "18px",
+				color: "#ffffff",
+				fontStyle: "bold",
+				stroke: "#000000",
+				strokeThickness: 3,
+			}).setOrigin(0.5);
+			addText(this, x + 100, y + 22, `最高 ${best.score} 分`, {
+				fontSize: "18px",
+				color: "#ffffff",
+				fontStyle: "bold",
+				stroke: "#000000",
+				strokeThickness: 3,
+			}).setOrigin(0.5);
+		} else {
+			addText(this, x + 60, y + 22, "通關困難級後解鎖", {
+				fontSize: "20px",
+				color: "#aaaaaa",
+				stroke: "#000000",
+				strokeThickness: 3,
+			}).setOrigin(0.5);
+		}
+
+		bg.setInteractive({ useHandCursor: unlocked });
+		if(unlocked) {
+			if(useImage) {
+				const img = bg as Phaser.GameObjects.Image;
+				bg.on("pointerover", () => {
+					this.tweens.add({ targets: img, displayWidth: w * 1.05, displayHeight: h * 1.05, duration: 120, ease: "Quad.Out" });
+				});
+				bg.on("pointerout", () => {
+					this.tweens.add({ targets: img, displayWidth: w, displayHeight: h, duration: 120, ease: "Quad.Out" });
+				});
+			} else {
+				const rect = bg as Phaser.GameObjects.Rectangle;
+				bg.on("pointerover", () => rect.setStrokeStyle(4, 0xffeb70));
+				bg.on("pointerout", () => rect.setStrokeStyle(3, strokeColor));
+			}
+			bg.on("pointerdown", () => {
+				SfxSystem.play(this, "sfx-click");
+				// 生存模式不算在一般 run 內：直接退出當前 run
+				RunState.end();
+				// 第五關 stageId（大安）= STAGES 最後一筆
+				const lastStageId = STAGES[STAGES.length - 1]!.id;
+				this.scene.start("GameScene", { stageId: lastStageId, survival: true });
+			});
+		}
 	}
 }

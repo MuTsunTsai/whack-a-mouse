@@ -54,6 +54,8 @@ export class BootScene extends Phaser.Scene {
 			// 失敗插畫（依失敗原因）
 			{ key: "bg-gameover-hanta", name: "bg-gameover-hanta" },
 			{ key: "bg-gameover-fail", name: "bg-gameover-fail" },
+			// 生存模式結局背景
+			{ key: "bg-survival-end", name: "bg-survival-end" },
 			// 各關卡過關插畫（依關卡 key）
 			...STAGES.map((s) => ({ key: `bg-clear-${s.key}`, name: `bg-clear-${s.key}` })),
 			// UI 圖示
@@ -66,7 +68,9 @@ export class BootScene extends Phaser.Scene {
 			// UI 按鈕整套（每張內含多顆按鈕，載入後在 create() 切割成 frames）
 			{ key: "btn-difficulty-set", name: "btn-difficulty-set" },
 			{ key: "btn-set", name: "btn-set" },
+			{ key: "btn-survival", name: "btn-survival" },
 			{ key: "card-stage-set", name: "card-stage-set" },
+			{ key: "card-achv-set", name: "card-achv-set" },
 			{ key: "medal-ending-set", name: "medal-ending-set" },
 		];
 
@@ -195,6 +199,24 @@ export class BootScene extends Phaser.Scene {
 			"medal-ending-good",
 			"medal-ending-bad",
 		]);
+		// 成就卡片整套（4 欄 × 3 列，每張 5:7 直式；最後一列右邊 2 格留空）
+		// 實際素材尺寸 2016 × 2112，每張卡片約 480 × 670、padding 25、間距 25
+		// 對應 ACHIEVEMENTS 陣列順序：
+		//   row 1: iron_fan / expert_easy / expert_normal / expert_hard
+		//   row 2: poison_maniac / animal_killer / last_gasp / bad_start
+		//   row 3: precision_strike / survivor / [空] / [空]
+		this.sliceCustom("card-achv-set", [
+			{ key: "card-achv-iron-fan",         x: 51,   y: 60,   w: 441, h: 635 },
+			{ key: "card-achv-expert-easy",      x: 541,  y: 60,   w: 441, h: 635 },
+			{ key: "card-achv-expert-normal",    x: 1032, y: 60,   w: 441, h: 635 },
+			{ key: "card-achv-expert-hard",      x: 1523, y: 60,   w: 441, h: 635 },
+			{ key: "card-achv-poison-maniac",    x: 51,   y: 745,  w: 441, h: 635 },
+			{ key: "card-achv-animal-killer",    x: 541,  y: 745,  w: 441, h: 635 },
+			{ key: "card-achv-last-gasp",        x: 1032, y: 745,  w: 441, h: 635 },
+			{ key: "card-achv-bad-start",        x: 1523, y: 745,  w: 441, h: 635 },
+			{ key: "card-achv-precision-strike", x: 51,   y: 1429, w: 441, h: 635 },
+			{ key: "card-achv-survivor",         x: 541,  y: 1429, w: 441, h: 635 },
+		], { override: true });
 		void this.sliceGrid; // 函式留著等需要時用，避免「未使用」警告
 	}
 

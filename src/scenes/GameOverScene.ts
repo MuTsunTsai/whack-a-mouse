@@ -5,10 +5,12 @@
 
 import Phaser from "phaser";
 import { STAGES, getStageById } from "../config/stages.ts";
+import { AchievementSystem } from "../systems/AchievementSystem.ts";
 import { Analytics } from "../systems/Analytics.ts";
 import { MusicSystem } from "../systems/MusicSystem.ts";
 import { RunState } from "../systems/RunState.ts";
 import { SaveSystem } from "../systems/SaveSystem.ts";
+import { showAchievementUnlockedPopups } from "../utils/achievementPopup.ts";
 import { makeButton } from "../utils/button.ts";
 import { buttonSizeFromTexture } from "../utils/buttonSize.ts";
 import { pickRandom } from "../utils/random.ts";
@@ -46,6 +48,17 @@ export class GameOverScene extends Phaser.Scene {
 		const isLastStage = this.result.stageId === STAGES[STAGES.length - 1]!.id;
 		const allCleared = this.result.passed && isLastStage;
 		const difficulty = RunState.getDifficulty();
+
+		// 成就：安鼠鐵粉（每進到結算畫面 +1，包含贏 / 輸 / 漢他）
+		const totalCompleted = SaveSystem.incrementStagesCompleted();
+		if (totalCompleted >= 100) {
+			AchievementSystem.unlock("iron_fan");
+		}
+
+		// 失敗 → 破壞 cleanRun（達人類成就要全程不失敗）
+		if (!this.result.passed) {
+			RunState.breakCleanRun();
+		}
 
 		// Analytics：過關（含最後一關全破）→ 送 wam_stage_clear
 		if (this.result.passed) {
@@ -198,13 +211,20 @@ export class GameOverScene extends Phaser.Scene {
 		}
 		buttons.push({
 			label: "再挑戰",
-			cb: () => this.scene.start("GameScene", { stageId: this.result.stageId }),
+			cb: () => {
+				// 重玩同關 → 破壞達人類成就條件
+				RunState.breakCleanRun();
+				this.scene.start("GameScene", { stageId: this.result.stageId });
+			},
 			bg: 0x4477aa,
 			key: "btn-replay",
 		});
 		buttons.push({
 			label: "選關",
-			cb: () => this.scene.start("StageSelectScene"),
+			cb: () => {
+				RunState.breakCleanRun();
+				this.scene.start("StageSelectScene");
+			},
 			bg: 0x666666,
 			key: "btn-stage-select",
 		});
@@ -239,5 +259,8 @@ export class GameOverScene extends Phaser.Scene {
 			});
 			cursorX += s.width + gap;
 		});
+
+		// 成就解鎖通知（若這次結算前有新解鎖的成就）
+		showAchievementUnlockedPopups(this, AchievementSystem.consumePending());
 	}
 }
