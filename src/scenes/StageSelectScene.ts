@@ -284,8 +284,10 @@ export class StageSelectScene extends Phaser.Scene {
 			}
 			bg.on("pointerdown", () => {
 				SfxSystem.play(this, "sfx-click");
-				// 生存模式不算在一般 run 內：直接退出當前 run
+				// 生存模式視為「獨立的 hard 場 run」：另開一個 RunState、退出時重置
+				// 用途：讓「毒餌狂魔 / 動物殺手」這類「單場 run 內計數」成就在生存模式內也能累積
 				RunState.end();
+				RunState.start("hard");
 				// 第五關 stageId（大安）= STAGES 最後一筆
 				const lastStageId = STAGES[STAGES.length - 1]!.id;
 				this.scene.start("GameScene", { stageId: lastStageId, survival: true });

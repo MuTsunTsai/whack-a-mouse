@@ -6,6 +6,7 @@
 import Phaser from "phaser";
 import { AchievementSystem } from "../systems/AchievementSystem.ts";
 import { MusicSystem } from "../systems/MusicSystem.ts";
+import { RunState } from "../systems/RunState.ts";
 import { SaveSystem } from "../systems/SaveSystem.ts";
 import { showAchievementUnlockedPopups } from "../utils/achievementPopup.ts";
 import { makeButton } from "../utils/button.ts";
@@ -179,7 +180,12 @@ export class SurvivalEndScene extends Phaser.Scene {
 			targetH, fallbackW: replaySize.width, fallbackH: replaySize.height,
 			textureKey: "btn-replay-run", fallbackColor: 0x4477aa,
 			label: "再來一場",
-			onClick: () => this.scene.start("GameScene", { stageId: 5, survival: true }),
+			onClick: () => {
+				// 重置 in-memory 計數（毒餌狂魔 / 動物殺手）：每次開新場都歸零
+				RunState.end();
+				RunState.start("hard");
+				this.scene.start("GameScene", { stageId: 5, survival: true });
+			},
 		});
 		makeButton({
 			scene: this,
@@ -187,7 +193,11 @@ export class SurvivalEndScene extends Phaser.Scene {
 			targetH, fallbackW: homeSize.width, fallbackH: homeSize.height,
 			textureKey: "btn-main-menu", fallbackColor: 0x666666,
 			label: "主選單",
-			onClick: () => this.scene.start("TitleScene"),
+			onClick: () => {
+				// 退出生存模式 → 清除 RunState（in-memory 計數也跟著歸零）
+				RunState.end();
+				this.scene.start("TitleScene");
+			},
 		});
 
 		// 成就解鎖通知
