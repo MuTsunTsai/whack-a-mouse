@@ -304,6 +304,17 @@ export class BootScene extends Phaser.Scene {
 		// 啟動覆蓋層 scene（永遠在最上層、不會被 scene.start 取代）
 		this.scene.launch("MuteToggleScene");
 
+		// === Dev hop（保留架構、預設不啟用；要微調某個畫面時填回 scene.start + return）===
+		// production build 中 `import.meta.env.DEV` 為 false，整個 if 區塊會被 tree-shaking 砍掉，
+		// 不影響正式發佈。範例：
+		//   RunState.start("normal");
+		//   this.scene.start("GameOverScene", { stageId: 5, reason: "stage-end", passed: true, ... });
+		//   return;
+		if (import.meta.env?.DEV) {
+			// 暫時無 dev hop
+		}
+		// === Dev hop end ===
+
 		// 進入啟動畫面（讓使用者點一下解鎖音訊，再進 TitleScene）
 		this.scene.start("StartScene");
 	}
