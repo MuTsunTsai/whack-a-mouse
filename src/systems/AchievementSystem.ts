@@ -6,6 +6,7 @@
 //   3. 下一個結算畫面（GameOverScene / EndingScene）呼叫 consumePending() 拿出佇列
 //   4. 用 showAchievementUnlockedPopups() 依序播放彈跳通知
 
+import { Analytics } from "./Analytics.ts";
 import { SaveSystem } from "./SaveSystem.ts";
 
 let pending: string[] = [];
@@ -13,11 +14,14 @@ let pending: string[] = [];
 export const AchievementSystem = {
 	/**
 	 * 解鎖一個成就。若是新解鎖（之前未存於 SaveSystem），會排進 pending 佇列以便
-	 * 下一個結算畫面顯示通知。已解鎖過的則靜默忽略。
+	 * 下一個結算畫面顯示通知，並送 GA 事件。已解鎖過的則靜默忽略、不重複上報。
 	 */
 	unlock(id: string): void {
 		const newly = SaveSystem.unlockAchievement(id);
-		if (newly) pending.push(id);
+		if (newly) {
+			pending.push(id);
+			Analytics.achievementUnlock(id);
+		}
 	},
 
 	/**

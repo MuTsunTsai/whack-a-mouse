@@ -37,21 +37,19 @@ function playNext(scene: Phaser.Scene, queue: Achievement[]): void {
 		.setInteractive();
 	layer.add(overlay);
 
-	// 卡片底圖
+	// 卡片：有素材就只畫卡片、缺檔才退回純色 fallback（無邊框、無底色）
 	const cardW = 320;
 	const cardH = 448;
 	const cardY = height / 2 - 40;
-
-	const cardBg = scene.add
-		.rectangle(width / 2, cardY, cardW, cardH, 0x333344, 1)
-		.setStrokeStyle(3, 0xffeb70);
-	layer.add(cardBg);
 
 	if (scene.textures.exists(entry.cardKey)) {
 		const card = scene.add.image(width / 2, cardY, entry.cardKey);
 		const scale = Math.min(cardW / card.width, cardH / card.height);
 		card.setScale(scale);
 		layer.add(card);
+	} else {
+		const cardBg = scene.add.rectangle(width / 2, cardY, cardW, cardH, 0x333344, 1);
+		layer.add(cardBg);
 	}
 
 	// 「🏆 成就解鎖」標題

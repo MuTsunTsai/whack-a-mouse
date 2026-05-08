@@ -65,4 +65,11 @@ export const Analytics = {
 			ending: args.ending,
 		});
 	},
+
+	/** 玩家「首次解鎖」某個成就。重複解鎖（已存於 SaveSystem）不會送。 */
+	achievementUnlock(achievementId: string): void {
+		gtag()?.("event", "wam_achievement_unlock", {
+			achievement_id: achievementId,
+		});
+	},
 };
