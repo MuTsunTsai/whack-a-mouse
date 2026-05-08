@@ -403,13 +403,30 @@ export class GameScene extends Phaser.Scene {
 			this.scheduleNextSpawn();
 			return;
 		}
-		this.spawn.markBusy(req.holeIndex);
+		this.attachCreature(req.creature, req.holeIndex, hole, req.lifespanMs);
 
-		const creature = new Creature(this, hole, req.creature, req.lifespanMs);
+		this.scheduleNextSpawn();
+	}
+
+	/**
+	 * 在指定洞口生出一隻指定生物，並掛上必要的 callbacks（mouse 的 retract 瞬移、onExit）。
+	 * 用於：
+	 *   - SpawnSystem 排程的常規 spawn
+	 *   - 生存模式中「打到友善動物 → 立刻補一隻老鼠」的懲罰
+	 */
+	private attachCreature(
+		type: CreatureType,
+		holeIndex: number,
+		hole: Hole,
+		lifespanMs: number,
+	): Creature {
+		this.spawn.markBusy(holeIndex);
+
+		const creature = new Creature(this, hole, type, lifespanMs);
 		this.creatures.add(creature);
 
 		// 老鼠：retract 時改成瞬移到另一個空洞，永遠不會自然消失（必須被打才會減少）
-		if (req.creature === "mouse") {
+		if (type === "mouse") {
 			this.liveMice.add(creature);
 			this.updateHantaUI();
 			creature.setRetractStrategy(
@@ -426,7 +443,7 @@ export class GameScene extends Phaser.Scene {
 					this.spawn.markBusy(newHoleIndex);
 					return newHole;
 				},
-				req.lifespanMs,
+				lifespanMs,
 			);
 			creature.onTeleport((oldHole) => {
 				this.spawn.markFree(oldHole.index);
@@ -451,7 +468,7 @@ export class GameScene extends Phaser.Scene {
 			}
 		});
 
-		this.scheduleNextSpawn();
+		return creature;
 	}
 
 	private handleHit(creature: Creature): void {
@@ -463,7 +480,9 @@ export class GameScene extends Phaser.Scene {
 			: Math.round(def.hitScore * this.mod.penaltyMultiplier); // hitScore 對無辜本來就是負數
 
 		const actualDelta = this.score.registerHit(creature.type, score);
-		this.charge.add(def.chargeGain);
+		// 集氣：生存模式下增量減半（避免炸彈無腦循環）
+		const chargeGain = this.survival ? Math.round(def.chargeGain / 2) : def.chargeGain;
+		this.charge.add(chargeGain);
 		// 浮出得分：在動物的右上角（往右上偏移）
 		this.hud.showScoreDelta(actualDelta, creature.hole.x + 30, creature.hole.y - 40);
 
@@ -471,6 +490,10 @@ export class GameScene extends Phaser.Scene {
 		if (!isMouse) {
 			RunState.addInnocentHit();
 			this.checkAnimalKillerUnlock();
+			// 生存模式懲罰：打到友善動物 → 立刻在隨機空洞補一隻老鼠（提升難度）
+			if (this.survival) {
+				this.spawnPenaltyMouse();
+			}
 		}
 
 		// 成就：垂死掙扎（場上老鼠數已達 threshold-1、再多一隻就漢他爆發時，徒手槌中老鼠）
@@ -810,6 +833,16 @@ export class GameScene extends Phaser.Scene {
 		if (RunState.getInnocentHitCount() >= 30) {
 			AchievementSystem.unlock("animal_killer");
 		}
+	}
+
+	// 生存模式懲罰：找一個空洞、立刻補一隻老鼠（沒空洞就放棄）
+	private spawnPenaltyMouse(): void {
+		if (this.over) return;
+		const holeIndex = this.spawn.pickFreeHole();
+		if (holeIndex === null) return;
+		const hole = this.holes[holeIndex];
+		if (!hole) return;
+		this.attachCreature("mouse", holeIndex, hole, this.spawn.rollLifespanMs());
 	}
 }
 
