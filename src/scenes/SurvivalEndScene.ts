@@ -63,6 +63,12 @@ export class SurvivalEndScene extends Phaser.Scene {
 		// CG 收集（即使圖片暫不存在也記錄解鎖，等使用者放圖後就會顯示）
 		SaveSystem.unlockCg("bg-survival-end");
 
+		// 成就：安鼠鐵粉（生存模式也算一次「完成關卡」）
+		const totalCompleted = SaveSystem.incrementStagesCompleted();
+		if (totalCompleted >= 100) {
+			AchievementSystem.unlock("iron_fan");
+		}
+
 		// 成就：適者生存（生存 ≥ 100 秒）
 		if (this.result.survivedSec >= 100) {
 			AchievementSystem.unlock("survivor");
