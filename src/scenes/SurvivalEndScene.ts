@@ -5,6 +5,7 @@
 
 import Phaser from "phaser";
 import { AchievementSystem } from "../systems/AchievementSystem.ts";
+import { Analytics } from "../systems/Analytics.ts";
 import { MusicSystem } from "../systems/MusicSystem.ts";
 import { RunState } from "../systems/RunState.ts";
 import { SaveSystem } from "../systems/SaveSystem.ts";
@@ -60,6 +61,12 @@ export class SurvivalEndScene extends Phaser.Scene {
 		const newSec = this.result.survivedSec > prev.sec;
 		const newScore = this.result.score > prev.score;
 		SaveSystem.updateSurvivalBest(this.result.survivedSec, this.result.score);
+
+		// Analytics：紀錄這場生存模式的存活秒數與分數
+		Analytics.survivalEnd({
+			survivedSec: this.result.survivedSec,
+			score: this.result.score,
+		});
 
 		// CG 收集（即使圖片暫不存在也記錄解鎖，等使用者放圖後就會顯示）
 		SaveSystem.unlockCg("bg-survival-end");

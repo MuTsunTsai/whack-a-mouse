@@ -72,4 +72,15 @@ export const Analytics = {
 			achievement_id: achievementId,
 		});
 	},
+
+	/** 生存模式結束（漢他爆發）：紀錄存活秒數與分數。 */
+	survivalEnd(args: {
+		survivedSec: number;
+		score: number;
+	}): void {
+		gtag()?.("event", "wam_survival_end", {
+			survived_sec: args.survivedSec,
+			score: args.score,
+		});
+	},
 };
