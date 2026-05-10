@@ -113,4 +113,17 @@ export const RunState = {
 	hasClearedAll(totalStageCount: number): boolean {
 		return (current?.clearedStages.size ?? 0) >= totalStageCount;
 	},
+
+	/**
+	 * 本場 run 是否從第 1 關連續通過到第 N 關（含）。
+	 * 用於達人類成就：「從第一關開始」是必要條件——若玩家從中途關卡開玩，
+	 * 即使 cleanRun 仍 true（沒失敗 / 沒重玩）也不該解鎖。
+	 */
+	hasClearedSequenceFrom1(toStageId: number): boolean {
+		if (!current) return false;
+		for (let i = 1; i <= toStageId; i++) {
+			if (!current.clearedStages.has(i)) return false;
+		}
+		return true;
+	},
 };

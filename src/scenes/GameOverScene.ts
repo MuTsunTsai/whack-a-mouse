@@ -60,9 +60,10 @@ export class GameOverScene extends Phaser.Scene {
 			RunState.breakCleanRun();
 		}
 
-		// 成就：安鼠高手 / 達人 / 神人 — 第五關過關 + cleanRun 仍保持
-		// 在這裡解鎖（而非 EndingScene），讓玩家在過關畫面就能看到通知
-		if (allCleared && RunState.isCleanRun()) {
+		// 成就：安鼠高手 / 達人 / 神人 — 必須「從第 1 關連續玩到第 5 關」+ 全程 cleanRun。
+		// hasClearedSequenceFrom1 確保不是從中途關卡開始玩（玩家可從 StageSelect 直接點某關）。
+		// 在這裡解鎖（而非 EndingScene），讓玩家在過關畫面就能看到通知。
+		if (allCleared && RunState.isCleanRun() && RunState.hasClearedSequenceFrom1(this.result.stageId)) {
 			const id = difficulty === "easy"
 				? "expert_easy"
 				: difficulty === "normal"
