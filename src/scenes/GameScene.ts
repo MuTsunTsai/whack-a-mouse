@@ -21,6 +21,7 @@ import { SaveSystem } from "../systems/SaveSystem.ts";
 import { ScoreSystem } from "../systems/ScoreSystem.ts";
 import { SfxSystem } from "../systems/SfxSystem.ts";
 import { SpawnSystem } from "../systems/SpawnSystem.ts";
+import { computeGuaranteedMice } from "../utils/spawnGuarantee.ts";
 import { pickBomb, pickHitMouse, pickMissKill } from "../utils/taunt.ts";
 import { addText } from "../utils/text.ts";
 import { waitForAsset } from "../utils/waitForAsset.ts";
@@ -62,6 +63,10 @@ export class GameScene extends Phaser.Scene {
 	private survival: boolean = false;
 	// 生存模式累計秒數（正向計時）
 	private survivalSeconds: number = 0;
+	// 保證冒出的老鼠數（一般模式）：full combo 通關所需的 1.5 倍
+	private guaranteedMiceTotal: number = 0;
+	// 已 spawn 過的老鼠累計（含瞬移後的同隻仍計 1 次；瞬移本身不算新 spawn）
+	private miceSpawned: number = 0;
 	/**
 	 * 炸彈動畫進行中：true 期間暫停 spawn 新生物。
 	 * 視覺上避免「炸彈剛清場 → 新動物立刻冒出」的違和感（會讓玩家誤以為沒炸到）。
@@ -106,6 +111,12 @@ export class GameScene extends Phaser.Scene {
 		this.survivalSeconds = 0;
 		this.over = false;
 		this.bombsUsedThisStage = 0;
+		this.miceSpawned = 0;
+		// 一般模式：計算「保證冒出多少隻老鼠」（full combo 通關所需 × guaranteedMouseFactor）。
+		// 生存模式無過關門檻、永久進行 → 不需要保證機制。
+		this.guaranteedMiceTotal = this.survival
+			? 0
+			: computeGuaranteedMice(this.effectiveStage.passScore, this.mod);
 
 		// 漢他新機制：依難度決定門檻
 		this.hantaThreshold = this.mod.hantaThreshold;
@@ -375,7 +386,17 @@ export class GameScene extends Phaser.Scene {
 
 	private scheduleNextSpawn(): void {
 		if (this.over) return;
-		const delay = this.spawn.nextDelayMs();
+		let delay = this.spawn.nextDelayMs();
+		// 保證機制：若還沒 spawn 滿配額，計算「剩餘秒 ÷ 剩餘必出老鼠」當動態上限，
+		// 確保最後一隻老鼠也能在時限結束前冒出（再扣掉一個安全裕度）。
+		const remainingMice = this.guaranteedMiceTotal - this.miceSpawned;
+		if (!this.survival && remainingMice > 0 && this.stageSecondsLeft > 0) {
+			const maxIntervalMs = (this.stageSecondsLeft * 1000) / remainingMice
+				- BALANCE.guaranteedSpawnSafetyMs;
+			if (maxIntervalMs > 0 && delay > maxIntervalMs) {
+				delay = maxIntervalMs;
+			}
+		}
 		this.spawnTimer = this.time.delayedCall(delay, () => this.doSpawn());
 	}
 
@@ -424,6 +445,11 @@ export class GameScene extends Phaser.Scene {
 
 		const creature = new Creature(this, hole, type, lifespanMs);
 		this.creatures.add(creature);
+
+		// 計入 spawn 配額（瞬移不算新 spawn、由 setRetractStrategy 內部處理）
+		if (type === "mouse") {
+			this.miceSpawned += 1;
+		}
 
 		// 老鼠：retract 時改成瞬移到另一個空洞，永遠不會自然消失（必須被打才會減少）
 		if (type === "mouse") {

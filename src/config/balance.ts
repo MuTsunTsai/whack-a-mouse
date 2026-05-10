@@ -25,6 +25,16 @@ export const BALANCE = {
 	comboBonusRate: 0.1,
 	comboDisplayThreshold: 3,
 
+	// 保證老鼠 spawn 數倍率：
+	// 系統在開關卡時計算「full combo 下要打 N 隻老鼠才剛好過關」，再乘以此倍率
+	// 作為「本關保證至少冒出多少隻老鼠」的目標。
+	// 1.5 = 容錯 50%（玩家可以漏掉 1/3 的老鼠仍可能過關）。
+	guaranteedMouseFactor: 1.5,
+	// 動態 spawn 上限的安全裕度：
+	// 「剩餘秒 ÷ 剩餘必出老鼠」算出的間隔上限再扣除這個值（毫秒），
+	// 確保最後一隻老鼠真的能在時限結束前冒出（避免邊界被瞬間結算切掉）。
+	guaranteedSpawnSafetyMs: 50,
+
 	// 遊戲畫布（採 16:9 比例貼近主流視窗，避免 FIT 模式產生大量黑邊）
 	gameWidth: 1280,
 	gameHeight: 720,
