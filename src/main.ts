@@ -77,11 +77,10 @@ function syncAppViewport(): void {
 	const top = el.getBoundingClientRect().top;
 	if (top < 0) {
 		// 上方被遮 → padding-top 把內容推回可見區。
-		// box-sizing: border-box 下 height 含 padding；要讓內部可用空間維持 baseH、
-		// 必須把 height 加上 offset，否則內容會被擠掉 offset 那麼多。
+		// height 維持 baseH 不變：#app 的總 box 等於 viewport 可見高度，
+		// padding 從中切出上方被遮的部分；Phaser 用「baseH - paddingTop」作為實際 fit 區域。
 		const offset = -top;
 		el.style.paddingTop = `${offset}px`;
-		el.style.height = `${baseH}px`;
 	}
 }
 
