@@ -1,0 +1,24 @@
+{
+	"name": "安鼠之亂",
+	"short_name": "安鼠之亂",
+	"description": "趣味打地鼠遊戲：5 大鼠跡熱區、Good / Bad 雙結局",
+	"lang": "zh-Hant",
+	"start_url": "/whack-a-mouse/",
+	"scope": "/whack-a-mouse/",
+	"display": "standalone",
+	"orientation": "landscape",
+	"background_color": "#1e1e2e",
+	"theme_color": "#1e1e2e",
+	"icons": [
+		{
+			"src": "assets/icon/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "assets/icon/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		}
+	]
+}

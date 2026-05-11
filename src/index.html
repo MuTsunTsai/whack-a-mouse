@@ -2,9 +2,16 @@
 <html lang="zh-Hant">
 	<head>
 		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
 		<meta name="theme-color" content="#1e1e2e" />
 		<meta name="description" content="安鼠之亂 — 趣味打地鼠遊戲" />
+		<!-- PWA：主要設定來自 manifest.json；下方 apple-* meta 補 iOS 不讀 manifest 的部分 -->
+		<link rel="manifest" href="manifest.json" />
+		<link rel="apple-touch-icon" href="assets/icon/icon-192.png" />
+		<!-- iOS-only：W3C 沒對應的 meta -->
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="安鼠之亂" />
 		<title>安鼠之亂</title>
 		<!-- Social preview (Open Graph + Twitter Card) -->
 		<meta property="og:type" content="website" />

@@ -41,23 +41,64 @@ const config: Phaser.Types.Core.GameConfig = {
 // 在 Phaser 啟動之前先跑：對話框是純 DOM、會浮在 canvas 之上
 showInAppBrowserNoticeIfNeeded();
 
+// 抑制 Android Chrome 的自動安裝橫幅（PWA 仍可手動透過瀏覽器選單安裝）
+// 不呼叫 prompt()、不存 event；玩家想裝就走「⋮ → 安裝應用程式」
+window.addEventListener("beforeinstallprompt", (e) => {
+	e.preventDefault();
+});
+
 const game = new Phaser.Game(config);
 
 // 多種情境會讓 viewport 改變、但瀏覽器更新 innerWidth/Height 有延遲（特別是 iOS）：
 //  1. orientationchange：旋轉裝置
 //  2. fullscreenchange：進 / 退全螢幕
-//  3. visualViewport.resize：軟鍵盤 / 雙指縮放退出
-// 解法：每次事件都連續多次呼叫 scale.refresh()（0/100/300/600ms），涵蓋瀏覽器整個過渡時間。
-//   refresh() 是 Phaser 4 安全可重入 API，多呼叫無副作用。
+//  3. visualViewport.resize：軟鍵盤 / 雙指縮放退出 / iOS Safari URL bar 收合
+//  4. visualViewport.scroll：iOS Safari URL bar 收合也會觸發此事件（非 resize）
+// 解法：每次事件都連續多次呼叫 scale.refresh()（0/100/300/600/1500/3000ms），
+//   涵蓋瀏覽器整個過渡時間。iOS Safari 旋轉後 URL bar 可能延遲幾秒才收合，
+//   所以最後一個 tick 拉到 3 秒。refresh() 是 Phaser 4 安全可重入 API，多呼叫無副作用。
+// iOS Safari 的「100dvh」在橫向時實際是「URL bar 收合後的最大區域」，
+// 但 URL bar 初始展開時 canvas 會被它蓋住上方一段（玩家看到的可見高度比 dvh 小）。
+// 用 visualViewport.height 才是真正反映「目前可繪製區域」的值；改用 JS 動態套到 #app。
+//
+// 另一個 iOS Safari 橫向多 tab 的問題：#app 的 getBoundingClientRect().top 會是負值
+// （例如 -19px），代表 #app 被推到 viewport 頂端之上、上方一段被 tab bar 蓋掉。
+// 修正方式：先量 top、若為負值用 padding-top 把內容推回可見區。
+function syncAppViewport(): void {
+	const el = document.getElementById("app");
+	if (!el) return;
+	const vv = window.visualViewport;
+	const baseW = vv ? vv.width : window.innerWidth;
+	const baseH = vv ? vv.height : window.innerHeight;
+	// 先清掉舊的 padding 再量 top，避免上輪的修正影響本輪量測
+	el.style.paddingTop = "";
+	el.style.width = `${baseW}px`;
+	el.style.height = `${baseH}px`;
+	const top = el.getBoundingClientRect().top;
+	if (top < 0) {
+		// 上方被遮 → padding-top 把內容推回可見區。
+		// box-sizing: border-box 下 height 含 padding；要讓內部可用空間維持 baseH、
+		// 必須把 height 加上 offset，否則內容會被擠掉 offset 那麼多。
+		const offset = -top;
+		el.style.paddingTop = `${offset}px`;
+		el.style.height = `${baseH}px`;
+	}
+}
+
 function refreshScale(): void {
+	syncAppViewport();
 	game.scale.refresh();
 	updateRotateHint();
 }
+// 初始也跑一次，避免第一次載入就是「viewport 過大」的狀態
+syncAppViewport();
 function refreshScaleStaggered(): void {
 	refreshScale();
 	setTimeout(refreshScale, 100);
 	setTimeout(refreshScale, 300);
 	setTimeout(refreshScale, 600);
+	setTimeout(refreshScale, 1500);
+	setTimeout(refreshScale, 3000);
 }
 
 // 旋轉提示：只在「處於全螢幕」且「viewport 仍呈直立（高 ≥ 寬）」時顯示
@@ -76,12 +117,20 @@ document.addEventListener("fullscreenchange", refreshScaleStaggered);
 // Safari 仍需 webkit 前綴版本才會在某些情況觸發
 document.addEventListener("webkitfullscreenchange", refreshScaleStaggered);
 if (window.visualViewport) {
-	window.visualViewport.addEventListener("resize", refreshScale);
+	// visualViewport 也用 staggered：iOS Safari 旋轉時 viewport 會經過多階段變動
+	//（先給舊值 → URL bar 開始收合 → 完全收合），單次抓會漏。
+	window.visualViewport.addEventListener("resize", refreshScaleStaggered);
+	// iOS Safari URL bar 收合時觸發的是 scroll、不是 resize。
+	window.visualViewport.addEventListener("scroll", refreshScale);
 }
 // 桌機跨螢幕（DPR 不同的顯示器）：window.resize 通常會觸發，且 DPR 變動時
 // matchMedia(`(resolution: ${dpr}dppx)`) 也會觸發。兩個都監聽以求保險。
 window.addEventListener("resize", refreshScale);
 watchDevicePixelRatio(refreshScale);
+
+// 啟動時的初始 staggered refresh：iOS Safari 載入後 URL bar 可能還沒完全 settle、
+// 第一次 syncAppViewport 拿到的值未必準。比照旋轉時的多 tick 策略再做一輪、確保 fit 正確。
+refreshScaleStaggered();
 
 // 動態訂閱當前 DPR 的 media query：當 DPR 變了，舊 query 觸發 → 重新訂閱新 DPR
 // 這是 W3C 推薦的「監聽 devicePixelRatio 變動」做法（DPR 是連續值，不是固定列舉）

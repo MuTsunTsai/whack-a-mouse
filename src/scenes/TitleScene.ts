@@ -115,10 +115,12 @@ export class TitleScene extends Phaser.Scene {
 			color: "#aaaaaa",
 		}).setOrigin(0.5);
 
-		// 手機版：左上角額外放一個「全螢幕」按鈕（StartScene 那次觸發若失敗時的補救）
+		// 手機版：左上角額外放一個「全螢幕」按鈕（StartScene 那次觸發若失敗時的補救）。
+		// iOS Safari 不支援 Fullscreen API（含 iPhone）→ scale.fullscreen.available 為 false，
+		// 此時不顯示按鈕（避免玩家點下去無反應）。
 		const dev = this.game.device;
 		const isMobile = !!dev.input.touch && !dev.os.desktop;
-		if (isMobile) {
+		if (isMobile && this.scale.fullscreen.available) {
 			this.makeFullscreenButton(20, 20);
 		}
 	}
