@@ -63,7 +63,8 @@ export class GameScene extends Phaser.Scene {
 	private survival: boolean = false;
 	// 生存模式累計秒數（正向計時）
 	private survivalSeconds: number = 0;
-	// 保證冒出的老鼠數（一般模式）：full combo 通關所需的 1.5 倍
+	// 保證冒出的老鼠數（一般模式）：full combo 通關所需的 1.5 倍。
+	// 生存模式無過關概念 → init 時直接設 0、不會啟用保證 spawn 機制。
 	private guaranteedMiceTotal: number = 0;
 	// 已 spawn 過的老鼠累計（含瞬移後的同隻仍計 1 次；瞬移本身不算新 spawn）
 	private miceSpawned: number = 0;
@@ -389,6 +390,12 @@ export class GameScene extends Phaser.Scene {
 		let delay = this.spawn.nextDelayMs();
 		// 保證機制：若還沒 spawn 滿配額，計算「剩餘秒 ÷ 剩餘必出老鼠」當動態上限，
 		// 確保最後一隻老鼠也能在時限結束前冒出（再扣掉一個安全裕度）。
+		//
+		// 三重保護排除「除以零 / 不適用情境」：
+		//   1. !this.survival：生存模式無過關概念、不啟用此機制
+		//   2. remainingMice > 0：保證量已滿（或生存模式 guaranteedMiceTotal=0
+		//      導致 remainingMice ≤ 0）→ 跳過、避免除以零
+		//   3. stageSecondsLeft > 0：時限已到（gameOver 尚未觸發的瞬間）→ 跳過
 		const remainingMice = this.guaranteedMiceTotal - this.miceSpawned;
 		if (!this.survival && remainingMice > 0 && this.stageSecondsLeft > 0) {
 			const maxIntervalMs = (this.stageSecondsLeft * 1000) / remainingMice

@@ -23,7 +23,7 @@ const VOLUME: Record<SfxKey, number> = {
 	"sfx-alarm": 0.65,
 	// 動物聲音稍低於 sfx-hit，避免疊播時遮蓋槌子的清脆感
 	"sfx-cat": 0.6,
-	"sfx-dog": 0.6,
+	"sfx-dog": 1.5, // 個別調整
 	"sfx-owl": 0.6,
 	"sfx-hawk": 1.0, // 個別調整
 };
